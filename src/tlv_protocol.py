@@ -4,6 +4,20 @@ Defines and implements actions for TLV protocol used for motor driver communicat
 
 import serial
 import struct
+import binascii
+
+# MOVE TO CONSTANTS
+MAX_TLV_COUNT = 25
+
+### HELPER FUNCTIONS ###
+def convert_to_bytes(value, num_bytes):
+    return value.to_bytes(length=num_bytes, byteorder="big")
+
+def bytes_to_int(byte_array, signed=False):
+    return int.from_bytes(byte_array, byteorder="big", signed=signed)
+
+def message_checksum(encoded_message):
+    return binascii.crc32(encoded_message)
 
 """ Defines all TLV supported by the protocol """
 class TlvType():
@@ -82,8 +96,35 @@ class MessageResult():
     MESSAGE_ERROR_CHECKSUM_MISMATCH = -5
     MESSAGE_ERROR_TLV_NOT_FOUND = -6
 
+""" TLV and message classes"""
+class Tlv():
+    def __init__(self, type=None, value=None):
+        self.type = type
+        self.value = value
+
+    def to_string(self):
+        print(f"Tlv type: {self.type}, tlv value: {self.value}")
+
+""" Representation of a protocol message in bytes """
+class EnocdedMessage():
+    def __init__(self):
+        self.tlvs = b''
+
+    def add_tlv(self, tlv):
+        """Add tlv to message, increase message length"""
+        self.tlvs += tlv
+
+""" Representation of a protocol message in objects (decoded TLVs) """
+class DecodedMessage():
+    def __init__(self):
+        self.tlvs = []
+
+    def add_tlv(self, tlv):
+        """Add tlv to message, increase message length"""
+        self.tlvs.append(tlv)
 
 def parse_tlv(tlv_type, tlv_message):
+    """Parse tlv and save into tlv class based on type"""
     tlv = Tlv(type=tlv_type)
     if tlv_type == TlvType.TLV_COMMAND:
         tlv.value = parse_command_tlv(tlv_message)
@@ -103,9 +144,9 @@ def parse_tlv(tlv_type, tlv_message):
         tlv.value = parse_power_reading_tlv(tlv_message)
     if tlv_type == TlvType.TLV_ENCODER_VALUE:
         tlv.value = parse_encoder_value_tlv(tlv_message)
-
     return tlv
 
+""" Create TLV """
 def create_command_tlv(command):
     tlv = struct.pack("BHB", TlvType.TLV_COMMAND, 1, command)
     return tlv
@@ -146,43 +187,13 @@ def create_sfp_calibration_tlv(offset_x, offset_y):
     tlv = struct.pack("BHBBBBBBBB", TlvType.TLV_SFP_CALIBRATION, 8, offset_x_bytes[0], offset_x_bytes[1], offset_x_bytes[2], offset_x_bytes[3], offset_y_bytes[0], offset_y_bytes[1], offset_y_bytes[2], offset_y_bytes[3])
     return tlv
 
-def create_checksum_tlv(checksum):
+def create_checksum_tlv(message):
+    checksum = binascii.crc32(message)
     checksum_bytes = convert_to_bytes(checksum, 4)
-    tlv = struct.pack("BHBBBB", TlvType.TLV_SFP_CALIBRATION, 4, checksum_bytes[0], checksum_bytes[1], checksum_bytes[2], checksum_bytes[3])
+    tlv = struct.pack("BHBBBB", TlvType.TLV_CHECKSUM, 4, checksum_bytes[0], checksum_bytes[1], checksum_bytes[2], checksum_bytes[3])
     return tlv
 
-### HELPER FUNCTIONS ###
-def convert_to_bytes(value, num_bytes):
-    return value.to_bytes(length=num_bytes, byteorder="big")
-
-def bytes_to_int(byte_array, signed=False):
-    return int.from_bytes(byte_array, byteorder="big", signed=signed)
-
-class Tlv():
-    def __init__(self, type=None, value=None):
-        self.type = type
-        self.value = value
-
-    def to_string(self):
-        print(f"Tlv type: {self.type}, tlv value: {self.value}")
-
-""" Representation of a protocol message """
-class EnocdedMessage():
-    def __init__(self):
-        self.tlvs = b''
-
-    def add_tlv(self, tlv):
-        """Add tlv to message, increase message length"""
-        self.tlvs += tlv
-
-class DecodedMessage():
-    def __init__(self):
-        self.tlvs = []
-
-    def add_tlv(self, tlv):
-        """Add tlv to message, increase message length"""
-        self.tlvs.append(tlv)
-
+""" Parse received TLV """
 def parse_command_tlv(tlv):
     unpacked = struct.unpack("BHB", tlv)
     print(unpacked)
@@ -235,7 +246,7 @@ def parse_checksum_tlv(tlv):
 
 # [type: 1 byte] [length: 2 bytes] [value: length bytes] - one TLV
 # [TLV#1] [TLV#2] ...
-""" Functions used to create and parse messages """
+""" Parse message consisting of TLV packets """
 def message_parse(message):
     """
     Parse message containing TLV commands.
@@ -246,8 +257,8 @@ def message_parse(message):
 
     offset = 0
     while offset < len(message):
-        # if len(message) >= MAX_TLV_COUNT:  # not sure yet how this is gonna work, since we're not working with c structs here
-        #     return MessageResult.MESSAGE_ERROR_TOO_MANY_TLVS, None
+        if len(messages.tlvs) >= MAX_TLV_COUNT:  # not sure yet how this is gonna work, since we're not working with c structs here
+            return MessageResult.MESSAGE_ERROR_TOO_MANY_TLVS, None
 
         start_offset = offset
         unpacked_tlv_type = struct.unpack("B", message[offset:offset+1])[0]  # parse using correct offsets
@@ -262,18 +273,18 @@ def message_parse(message):
         print(f"Whole tlv: {tlv_message}")
         tlv = parse_tlv(unpacked_tlv_type, tlv_message)
 
+        if unpacked_tlv_type == TlvType.TLV_CHECKSUM:
+            checksum = message_checksum(message[0:start_offset])  # check checksum on message so far
+            if checksum != tlv.value:
+                return MessageResult.MESSAGE_ERROR_CHECKSUM_MISMATCH, None
+
         messages.add_tlv(tlv)
 
         offset += 1
         print(f"Offset after unpacking TLV: {offset}")
 
-        # if tlv.type == TlvType.TLV_CHECKSUM:
-        #     checksum = message_checksum(message)  # TODO implement all other checks as well
-
     return MessageResult.MESSAGE_SUCCESS, messages  # return value is MessageResult, msg (None if fail)
     
-
-
 ## test message packing
 encoded_message = EnocdedMessage()
 tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
@@ -292,9 +303,8 @@ tlv_power_reading = create_power_reading_tlv(130)
 encoded_message.add_tlv(tlv_power_reading)
 tlv_encoder = create_encoder_value_tlv(55, 66)
 encoded_message.add_tlv(tlv_encoder)
-
-# # print(f"TLV Command move motor: {tlv_command}")
-# # print(f"Parsed command enum: {parse_command_tlv(tlv_command)}")
+tlv_checksum = create_checksum_tlv(encoded_message.tlvs)
+encoded_message.add_tlv(tlv_checksum)
 
 message_result, decoded_message = message_parse(encoded_message.tlvs)
 
