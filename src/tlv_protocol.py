@@ -59,7 +59,7 @@ class MotorPosition():
 
 """ Contents of the TLV_ENCODER_VALUE TLV """
 class EncoderValue():
-    def __init__(self):
+    def __init__(self, x=None, y=None):
         self.x = None  # int32_t type
         self.y = None  # int32_t type
 
@@ -77,12 +77,12 @@ class VibrationValue():
 
 """ Contents of the TLV_ERROR_REPORT TLV """
 class ErrorReport():
-    def __init__(self):
+    def __init__(self, code=None):
         self.code = None  # uint32_t type
 
 """ Contents of the TLV_SFP_CALIBRATION TLV """
 class SfpCalibration():
-    def __init__(self):
+    def __init__(self, offset_x, offset_y):
         self.offset_x = None  # uint32_t type
         self.offset_y = None  # uint32_t type
 
@@ -210,11 +210,13 @@ def parse_motor_position_tlv(tlv):
     x = bytes_to_int(unpacked[2:6], signed=True)
     y = bytes_to_int(unpacked[6:10], signed=True)
     z = bytes_to_int(unpacked[10:14], signed=True)
-    return [x, y, z]
+    motor_pos = MotorPosition(x, y, z)
+    return motor_pos
 
 def parse_error_report_tlv(tlv):
     unpacked = struct.unpack("BHI", tlv)
     error_report = unpacked[2]
+    error_report = ErrorReport(error_report)
     return error_report
 
 def parse_current_reading_tlv(tlv):
@@ -231,13 +233,15 @@ def parse_encoder_value_tlv(tlv):
     unpacked = struct.unpack("BHBBBBBBBB", tlv)
     x = bytes_to_int(unpacked[2:6], signed=True)
     y = bytes_to_int(unpacked[6:10], signed=True)
-    return [x, y]
+    encoder_value = EncoderValue(x, y)
+    return encoder_value
 
 def parse_sfp_calibration_tlv(tlv):
     unpacked = struct.unpack("BHBBBBBBBB", tlv)
     offset_x = bytes_to_int(unpacked[2:6], signed=False)
     offset_y = bytes_to_int(unpacked[6:10], signed=False)
-    return [offset_x, offset_y]
+    calib = SfpCalibration(offset_x, offset_y)
+    return calib
 
 def parse_checksum_tlv(tlv):
     unpacked = struct.unpack("BHBBBB", tlv)
