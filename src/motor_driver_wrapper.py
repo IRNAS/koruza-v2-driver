@@ -2,10 +2,10 @@ import serial
 import math 
 
 from tlv_protocol import *
-
+from threading import Lock
 
 class MotorWrapper():
-    def __init__(self, serial_port, baudrate, timeout=2, lock):
+    def __init__(self, serial_port, baudrate=115200, timeout=2, lock=None):
         """Initialize motor wrapper"""
         self.ser = None
         self.ser = serial.Serial(serial_port, baudrate, timeout=timeout)
@@ -37,7 +37,7 @@ class MotorWrapper():
         encoded_message.add_tlv(checksum)
 
         self.lock.acquire()
-        self.ser.write(encoded_message)  # send message over serial
+        self.ser.write(encoded_message.tlvs)  # send message over serial
         self.lock.release()
         return True
         
@@ -48,6 +48,8 @@ class MotorWrapper():
         if not motors_connected:
             return False
 
+        # print("Sending data to serial")
+
         encoded_message = EnocdedMessage()
         cmd_move_motor = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
         motor_position_command = create_motor_position_tlv(x, y, z)
@@ -57,7 +59,7 @@ class MotorWrapper():
         encoded_message.add_tlv(checksum)
 
         self.lock.acquire()
-        self.ser.write(encoded_message)  # send message over serial
+        self.ser.write(encoded_message.tlvs)  # send message over serial
         self.lock.release()
         return True
 
@@ -74,6 +76,13 @@ class MotorWrapper():
         encoded_message.add_tlv(checksum)
 
         self.lock.acquire()
-        self.ser.write(encoded_message)  # send message over serial
+        self.ser.write(encoded_message.tlvs)  # send message over serial
         self.lock.release()
         return True
+
+
+# test code
+# lock = Lock()
+# motor_wrapper = MotorWrapper("/dev/ttyAMA0", lock=lock)
+# motor_wrapper.koruza_move_motor(True, 1000, 0, 0)
+
