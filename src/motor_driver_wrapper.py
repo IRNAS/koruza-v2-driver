@@ -1,7 +1,7 @@
 import serial
 import math 
 
-from tlv_protocol import *
+from communication import *
 from threading import Lock
 
 class MotorWrapper():
@@ -13,6 +13,9 @@ class MotorWrapper():
 
         self.motor_wrapper_running = False
 
+        self.position_x = None
+        self.position_y = None
+        self.position_z = None
 
     def __del__(self):
         try:
@@ -22,61 +25,101 @@ class MotorWrapper():
         except Exception as e:
             raise e
 
-    def koruza_restore_motor(self, pos_x, pos_y, pos_z):
+    def get_motor_status(self):
+        """Get motor status and update state"""
+
+        msg = Message()
+        tlv_command = create_command_tlv(TlvCommand.COMMAND_GET_STATUS)
+        msg.add_tlv(tlv_command)
+        tlv_checksum = create_checksum_tlv(msg)
+        msg.add_tlv(tlv_checksum)
+        encoded_msg = msg.encode()
+        # print(f"Encoded message: {encoded_msg}")
+        frame = build_frame(encoded_msg)
+
+        
+        self.lock.acquire()
+        self.ser.write(frame)  # send message over serial
+        self.lock.release()
+
+        response = read_frame(self.ser)  # read response
+        response_clean = clean_frame(response)
+        print(f"Cleaned response: {response_clean}")
+        parsed = message_parse(response_clean)
+        # parse motor position from message
+        print(f"Num decoded tlvs: {len(parsed[1].tlvs)}")
+        if parsed[0] == MessageResult.MESSAGE_SUCCESS:
+            # print(parsed[1])
+            message = parsed[1]
+            for tlv in message.tlvs:
+                # print("new TLV")
+                if tlv.type == TlvType.TLV_MOTOR_POSITION:  # get data from reply
+                    print(tlv.to_string())
+
+    def restore_motor(self, pos_x, pos_y, pos_z):
         """Restore motors to default position"""
         # pos_x = self.status["motors"]["x"]
         # pos_y = self.status["motors"]["y"]
         # pos_z = self.status["motors"]["z"]
 
-        encoded_message = EnocdedMessage()
-        cmd_restore_motor = create_command_tlv(TlvCommand.COMMAND_RESTORE_MOTOR)
-        motor_position_command = create_motor_position_tlv(pos_x, pos_y, pos_z)
-        encoded_message.add_tlv(cmd_restore_motor)
-        encoded_message.add_tlv(motor_position_command)
-        checksum = create_checksum_tlv(encoded_message.tlvs)
-        encoded_message.add_tlv(checksum)
+        print(f"Restoring motors to: {pos_x}, {pos_y}, {pos_z}")
+        msg = Message()
+        tlv_command = create_command_tlv(TlvCommand.COMMAND_RESTORE_MOTOR)
+        msg.add_tlv(tlv_command)
+        motor_position = create_motor_position_tlv(pos_x, pos_y, pos_z)
+        msg.add_tlv(motor_position)
+        checksum = create_checksum_tlv(msg)
+        msg.add_tlv(checksum)
+        encoded_msg = msg.encode()
+        frame = build_frame(encoded_msg)
+        print(frame)
 
         self.lock.acquire()
-        self.ser.write(encoded_message.tlvs)  # send message over serial
+        self.ser.write(frame)  # send message over serial
         self.lock.release()
         return True
         
 
-    def koruza_move_motor(self, motors_connected, x, y, z):
+    def move_motor(self, motors_connected, x, y, z):
         """Move motor to set position"""
 
         if not motors_connected:
             return False
 
         # print("Sending data to serial")
-
-        encoded_message = EnocdedMessage()
-        cmd_move_motor = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
-        motor_position_command = create_motor_position_tlv(x, y, z)
-        encoded_message.add_tlv(cmd_move_motor)
-        encoded_message.add_tlv(motor_position_command)
-        checksum = create_checksum_tlv(encoded_message.tlvs)
-        encoded_message.add_tlv(checksum)
+        print(f"Moving motors for {x} {y} {z}")
+        msg = Message()
+        tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
+        msg.add_tlv(tlv_command)
+        motor_position = create_motor_position_tlv(x, y, z)
+        msg.add_tlv(motor_position)
+        checksum = create_checksum_tlv(msg)
+        msg.add_tlv(checksum)
+        encoded_msg = msg.encode()
+        frame = build_frame(encoded_msg)
+        print(frame)
 
         self.lock.acquire()
-        self.ser.write(encoded_message.tlvs)  # send message over serial
+        self.ser.write(frame)  # send message over serial
         self.lock.release()
         return True
 
-    def koruza_homing(self, motors_connected):
+    def homing(self, motors_connected):
         """Home to center"""
 
         if not motors_connected:
             return False
 
-        encoded_message = EnocdedMessage()
+        msg = Message()
         cmd_home_motor = create_command_tlv(TlvCommand.COMMAND_HOMING)
-        encoded_message.add_tlv(cmd_home_motor)
-        checksum = create_checksum_tlv(encoded_message.tlvs)
-        encoded_message.add_tlv(checksum)
+        msg.add_tlv(cmd_home_motor)
+        checksum = create_checksum_tlv(msg.tlvs)
+        msg.add_tlv(checksum)
+        encoded_msg = msg.encode()
+        frame = build_frame(encoded_msg)
 
         self.lock.acquire()
-        self.ser.write(encoded_message.tlvs)  # send message over serial
+        self.ser.write(frame)  # send message over serial
         self.lock.release()
         return True
 

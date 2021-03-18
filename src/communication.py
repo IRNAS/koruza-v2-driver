@@ -10,8 +10,8 @@ import binascii
 MAX_TLV_COUNT = 25
 
 ### HELPER FUNCTIONS ###
-def convert_to_bytes(value, num_bytes):
-    return value.to_bytes(length=num_bytes, byteorder="big")
+def convert_to_bytes(value, num_bytes, signed=False):
+    return value.to_bytes(length=num_bytes, byteorder="big", signed=signed)
 
 def bytes_to_int(byte_array, signed=False):
     return int.from_bytes(byte_array, byteorder="big", signed=signed)
@@ -109,21 +109,21 @@ class Tlv():
         return encoded
 
     def to_string(self):
-        print(f"Tlv type: {self.type}, tlv value: {self.value}")
+        return f"Tlv type: {self.type}, tlv value: {self.value}"
 
 """ Representation of a protocol message in bytes """
 class Message():
     def __init__(self):
-        self.tlv_objs = []
+        self.tlvs = []
 
     def add_tlv(self, tlv):
         """Add tlv object to message. Encode before sending"""
-        self.tlv_objs.append(tlv)
+        self.tlvs.append(tlv)
 
     def encode(self):
         """Encode all tlvs into byte array"""
         encoded_msg = b''
-        for tlv in self.tlv_objs:
+        for tlv in self.tlvs:
             encoded_msg += tlv.encode()
 
         return encoded_msg
@@ -174,9 +174,9 @@ def create_reply_tlv(reply):
 
 def create_motor_position_tlv(x, y, z):
     #tlv = Tlv(type=TlvType.TLV_MOTOR_POSITION, length=12)  # motor position is int32_t, so 3*4 bytes
-    x_bytes = convert_to_bytes(x, 4)
-    y_bytes = convert_to_bytes(y, 4)
-    z_bytes = convert_to_bytes(z, 4)
+    x_bytes = convert_to_bytes(x, 4, signed=True)
+    y_bytes = convert_to_bytes(y, 4, signed=True)
+    z_bytes = convert_to_bytes(z, 4, signed=True)
     tlv = Tlv(TlvType.TLV_MOTOR_POSITION, [0x00, 0x0C], [*x_bytes, *y_bytes, *z_bytes])
     # tlv = struct.pack("BBBBBBBBBBBBBBB", TlvType.TLV_MOTOR_POSITION, 0x00, 0x0C, x_bytes[0], x_bytes[1], x_bytes[2], x_bytes[3], y_bytes[0], y_bytes[1], y_bytes[2], y_bytes[3], z_bytes[0], z_bytes[1], z_bytes[2], z_bytes[3])
     return tlv
@@ -200,8 +200,8 @@ def create_power_reading_tlv(power):
     return tlv
 
 def create_encoder_value_tlv(x, y):
-    x_bytes = convert_to_bytes(x, 4)
-    y_bytes = convert_to_bytes(y, 4)
+    x_bytes = convert_to_bytes(x, 4, signed=True)
+    y_bytes = convert_to_bytes(y, 4, signed=True)
     tlv = Tlv(TlvType.TLV_ENCODER_VALUE, [0x00, 0x08], [*x_bytes, *y_bytes])
     # tlv = struct.pack("BBBBBBBBBBB", TlvType.TLV_ENCODER_VALUE, 0x00, 0x08, x_bytes[0], x_bytes[1], x_bytes[2], x_bytes[3], y_bytes[0], y_bytes[1], y_bytes[2], y_bytes[3])
     return tlv
@@ -216,7 +216,7 @@ def create_sfp_calibration_tlv(offset_x, offset_y):
 def create_checksum_tlv(message):
     check_sum = 0
     tlv_values_appended = b''
-    for tlv in message.tlv_objs:
+    for tlv in message.tlvs:
         tlv_len = int.from_bytes(bytearray(tlv.length), "big", signed=False)
         print(f"Tlv len: {tlv_len}")
         tlv_values_appended += struct.pack("B" * tlv_len,  *tlv.value)
@@ -334,39 +334,80 @@ def message_parse(message):
 
     return MessageResult.MESSAGE_SUCCESS, messages  # return value is MessageResult, msg (None if fail)
 
-def build_frame(byte_array_message):
+def build_frame(bytes_msg):
     """Add 0xf1 to beginning of message and 0xf2 to end of message"""
-    return b'\xf1' + byte_array_message + b'\xf2'
+    insert_indices = []
+    for index, b in enumerate(bytes_msg):
+        if b == int.from_bytes(b'\xf1', "big") or b == int.from_bytes(b'\xf2', "big"):
+            insert_indices.append(index)
 
+    bytes_msg = bytearray(bytes_msg)  # bytes is immutable, change to bytearray
+    for ind in insert_indices:
+        bytes_msg[ind:ind] = b'\xf3'
+    return b'\xf1' + bytes(bytes_msg) + b'\xf2'
+
+def read_frame(ser):
+    """Read frame, starting with 0xf1 and ending with 0xf2"""
+    frame = b''  # initialize empty byte
+    start_frame_detected = False
+    while True:
+        rx = ser.read()
+        # print(rx)
+        if rx == b'\xf2':  # end of frame
+            start_frame_detected = False
+            frame += rx
+            print(f"Response: {frame}")
+            break
+        if rx == b'\xf1':  # start of new frame
+            start_frame_detected = True
+            frame += rx
+        if start_frame_detected:
+            frame += rx
+    
+    return frame
+
+def clean_frame(frame):
+    """Clear markers from frame"""
+    start_index = 0
+    end_index = 0
+    for index, b in enumerate(frame):
+        # print(b)
+        if b == int.from_bytes(b'\xf1', "big"):
+            start_index = index
+            # print(f"Start index: {start_index}")
+        if b == int.from_bytes(b'\xf2', "big"):
+            end_index = index
+            # print(f"End index: {end_index}")
+    return frame[start_index+1:end_index]
 # test message packing
-msg = Message()
-tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)  # len 1
-msg.add_tlv(tlv_command)
-tlv_reply = create_reply_tlv(TlvReply.REPLY_ERROR_REPORT)  # len 1
-msg.add_tlv(tlv_reply)
-tlv_motor_position = create_motor_position_tlv(123, 123, 123)  # len 12
-msg.add_tlv(tlv_motor_position)
-tlv_motor_current = create_current_reading_tlv(12345)  # len 2
-msg.add_tlv(tlv_motor_current)
-tlv_sfp_calib = create_sfp_calibration_tlv(200, 400)  # len 8
-msg.add_tlv(tlv_sfp_calib)
-tlv_error_report = create_error_report_tlv(123)  # len 4
-msg.add_tlv(tlv_error_report)
-tlv_power_reading = create_power_reading_tlv(130)  # len 2
-msg.add_tlv(tlv_power_reading)
-tlv_encoder = create_encoder_value_tlv(55, 66)  # len 8
-msg.add_tlv(tlv_encoder)
-tlv_checksum = create_checksum_tlv(msg)
-msg.add_tlv(tlv_checksum)
+# msg = Message()
+# tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)  # len 1
+# msg.add_tlv(tlv_command)
+# tlv_reply = create_reply_tlv(TlvReply.REPLY_ERROR_REPORT)  # len 1
+# msg.add_tlv(tlv_reply)
+# tlv_motor_position = create_motor_position_tlv(123, 123, 123)  # len 12
+# msg.add_tlv(tlv_motor_position)
+# tlv_motor_current = create_current_reading_tlv(12345)  # len 2
+# msg.add_tlv(tlv_motor_current)
+# tlv_sfp_calib = create_sfp_calibration_tlv(200, 400)  # len 8
+# msg.add_tlv(tlv_sfp_calib)
+# tlv_error_report = create_error_report_tlv(123)  # len 4
+# msg.add_tlv(tlv_error_report)
+# tlv_power_reading = create_power_reading_tlv(130)  # len 2
+# msg.add_tlv(tlv_power_reading)
+# tlv_encoder = create_encoder_value_tlv(55, 66)  # len 8
+# msg.add_tlv(tlv_encoder)
+# tlv_checksum = create_checksum_tlv(msg)
+# msg.add_tlv(tlv_checksum)
 
-framed_msg = build_frame(msg.encode())
-print(framed_msg)
+# framed_msg = build_frame(msg.encode())
+# print(framed_msg)
 
-# parse message, discard frames, look for them elsewhere TODO
-framed_msg = framed_msg[1:-1]
-print(framed_msg)
+# # parse message, discard frames, look for them elsewhere TODO
+# framed_msg = framed_msg[1:-1]
+# print(framed_msg)
 
-message_parse(framed_msg)
+# message_parse(framed_msg)
 
 # message_result, decoded_message = message_parse(encoded_message.tlvs)
 
