@@ -137,29 +137,6 @@ class DecodedMessage():
         """Add tlv to message, increase message length"""
         self.tlvs.append(tlv)
 
-# def parse_tlv(tlv_type, tlv_message):
-#     """Parse tlv and save into tlv class based on type"""
-#     tlv = Tlv(type=tlv_type)
-#     if tlv_type == TlvType.TLV_COMMAND:
-#         tlv.value = parse_command_tlv(tlv_message)
-#     if tlv_type == TlvType.TLV_REPLY:
-#         tlv.value = parse_reply_tlv(tlv_message)
-#     if tlv_type == TlvType.TLV_CHECKSUM:
-#         tlv.value = parse_checksum_tlv(tlv_message)
-#     if tlv_type == TlvType.TLV_MOTOR_POSITION:
-#         tlv.value = parse_motor_position_tlv(tlv_message)
-#     if tlv_type == TlvType.TLV_CURRENT_READING:
-#         tlv.value = parse_current_reading_tlv(tlv_message)
-#     if tlv_type == TlvType.TLV_SFP_CALIBRATION:
-#         tlv.value = parse_sfp_calibration_tlv(tlv_message)
-#     if tlv_type == TlvType.TLV_ERROR_REPORT:
-#         tlv.value = parse_error_report_tlv(tlv_message)
-#     if tlv_type == TlvType.TLV_POWER_READING:
-#         tlv.value = parse_power_reading_tlv(tlv_message)
-#     if tlv_type == TlvType.TLV_ENCODER_VALUE:
-#         tlv.value = parse_encoder_value_tlv(tlv_message)
-#     return tlv
-
 """ Create TLV """
 # NOTE: observed weird behaviour with packing bytes in this order or similar: "BHB" should pack 4 bytes but actually packs 5???
 def create_command_tlv(command):
@@ -218,7 +195,7 @@ def create_checksum_tlv(message):
     tlv_values_appended = b''
     for tlv in message.tlvs:
         tlv_len = int.from_bytes(bytearray(tlv.length), "big", signed=False)
-        print(f"Tlv len: {tlv_len}")
+        # print(f"Tlv len: {tlv_len}")
         tlv_values_appended += struct.pack("B" * tlv_len,  *tlv.value)
     checksum = binascii.crc32(tlv_values_appended)
     checksum_bytes = convert_to_bytes(checksum, 4)
@@ -227,67 +204,13 @@ def create_checksum_tlv(message):
 
 """ Parse received TLV """
 def parse_tlv(tlv_bytearray):
-    print(f"tlv bytearray: {tlv_bytearray}")
+    # print(f"tlv bytearray: {tlv_bytearray}")
     type = tlv_bytearray[0]  #first byte is TLV Type
     length = int.from_bytes(tlv_bytearray[1:3], "big")  #next two bytes are length of value
     value = struct.unpack("B" * length, tlv_bytearray[3:3+length])
     tlv = Tlv(type=type, length=length, value=value)  # handle value later when processing tlv
-    print(tlv)
+    # print(tlv)
     return tlv
-
-# def parse_command_tlv(tlv):
-#     unpacked = struct.unpack("BBBB", tlv)
-#     print(unpacked)
-#     command = unpacked[2]
-#     return command
-
-# def parse_reply_tlv(tlv):
-#     unpacked = struct.unpack("BHB", tlv)
-#     reply = unpacked[2]
-#     return reply
-
-# def parse_motor_position_tlv(tlv):
-#     unpacked = struct.unpack("BHBBBBBBBBBBBB", tlv)
-#     x = bytes_to_int(unpacked[2:6], signed=True)
-#     y = bytes_to_int(unpacked[6:10], signed=True)
-#     z = bytes_to_int(unpacked[10:14], signed=True)
-#     motor_pos = MotorPosition(x, y, z)
-#     return motor_pos
-
-# def parse_error_report_tlv(tlv):
-#     unpacked = struct.unpack("BHI", tlv)
-#     error_report = unpacked[2]
-#     error_report = ErrorReport(error_report)
-#     return error_report
-
-# def parse_current_reading_tlv(tlv):
-#     unpacked = struct.unpack("BHH", tlv)
-#     current = unpacked[2]
-#     return current
-
-# def parse_power_reading_tlv(tlv):
-#     unpacked = struct.unpack("BHH", tlv)
-#     power = unpacked[2]
-#     return power
-
-# def parse_encoder_value_tlv(tlv):
-#     unpacked = struct.unpack("BHBBBBBBBB", tlv)
-#     x = bytes_to_int(unpacked[2:6], signed=True)
-#     y = bytes_to_int(unpacked[6:10], signed=True)
-#     encoder_value = EncoderValue(x, y)
-#     return encoder_value
-
-# def parse_sfp_calibration_tlv(tlv):
-#     unpacked = struct.unpack("BHBBBBBBBB", tlv)
-#     offset_x = bytes_to_int(unpacked[2:6], signed=False)
-#     offset_y = bytes_to_int(unpacked[6:10], signed=False)
-#     calib = SfpCalibration(offset_x, offset_y)
-#     return calib
-
-# def parse_checksum_tlv(tlv):
-#     unpacked = struct.unpack("BHBBBB", tlv)
-#     checksum = bytes_to_int(unpacked[2:6], signed=False)
-#     return checksum
 
 # [type: 1 byte] [length: 2 bytes] [value: length bytes] - one TLV
 # [TLV#1] [TLV#2] ...
@@ -307,19 +230,19 @@ def message_parse(message):
 
         start_offset = offset
         unpacked_tlv_type = message[offset:offset+1]  # parse using correct offsets
-        print(f"tlv type buffer: {message[offset:offset+1]}")
-        print(f"Unpacked tlv_type: {unpacked_tlv_type}")
+        # print(f"tlv type buffer: {message[offset:offset+1]}")
+        # print(f"Unpacked tlv_type: {unpacked_tlv_type}")
         offset += 1  # increment offset by 1 (remember, size is 1 byte in size)
-        print(f"Offset after unpacking type: {offset}")
+        # print(f"Offset after unpacking type: {offset}")
 
         length = int.from_bytes(message[offset:offset+2], "big")  # length is 2 bytes in size
-        print(f"length buffer: {message[offset:offset+2]}")
-        print(f"Unpacked length: {length}")
+        # print(f"length buffer: {message[offset:offset+2]}")
+        # print(f"Unpacked length: {length}")
         offset += (2 + length)
-        print(f"Offset after unpacking length: {offset}")
+        # print(f"Offset after unpacking length: {offset}")
 
         tlv_message = message[start_offset:offset]
-        print(f"Whole tlv: {tlv_message}")
+        # print(f"Whole tlv: {tlv_message}")
         tlv = parse_tlv(tlv_message)
 
         if unpacked_tlv_type == TlvType.TLV_CHECKSUM:
@@ -330,7 +253,7 @@ def message_parse(message):
         messages.add_tlv(tlv)
 
         # offset += 1
-        print(f"Offset after unpacking TLV: {offset}")
+        # print(f"Offset after unpacking TLV: {offset}")
 
     return MessageResult.MESSAGE_SUCCESS, messages  # return value is MessageResult, msg (None if fail)
 
@@ -338,7 +261,8 @@ def build_frame(bytes_msg):
     """Add 0xf1 to beginning of message and 0xf2 to end of message"""
     insert_indices = []
     for index, b in enumerate(bytes_msg):
-        if b == int.from_bytes(b'\xf1', "big") or b == int.from_bytes(b'\xf2', "big"):
+        # escape all frame markers
+        if b == int.from_bytes(b'\xf1', "big") or b == int.from_bytes(b'\xf2', "big") or b == int.from_bytes(b'\xf3', "big"):
             insert_indices.append(index)
 
     bytes_msg = bytearray(bytes_msg)  # bytes is immutable, change to bytearray
@@ -349,20 +273,23 @@ def build_frame(bytes_msg):
 def read_frame(ser):
     """Read frame, starting with 0xf1 and ending with 0xf2"""
     frame = b''  # initialize empty byte
+    # TODO handle escape markers
     start_frame_detected = False
+    prev_char = None
     while True:
         rx = ser.read()
         # print(rx)
-        if rx == b'\xf2':  # end of frame
+        if rx == b'\xf2' and prev_char != b'\xf3':  # end of frame if not escaped by '\xf3'
             start_frame_detected = False
             frame += rx
-            print(f"Response: {frame}")
+            # print(f"Response: {frame}")
             break
-        if rx == b'\xf1':  # start of new frame
+        if rx == b'\xf1' and prev_char != b'\xf3':  # start of new frame
             start_frame_detected = True
-            frame += rx
+            # frame += rx
         if start_frame_detected:
             frame += rx
+        prev_char = rx
     
     return frame
 
@@ -370,46 +297,27 @@ def clean_frame(frame):
     """Clear markers from frame"""
     start_index = 0
     end_index = 0
+    remove_indices = []
+    prev_char = None
     for index, b in enumerate(frame):
         # print(b)
-        if b == int.from_bytes(b'\xf1', "big"):
+        if b == int.from_bytes(b'\xf1', "big") and not prev_char == int.from_bytes(b'\xf3', "big"):
             start_index = index
+        elif b == int.from_bytes(b'\xf1', "big") and prev_char == int.from_bytes(b'\xf3', "big"):
+            remove_indices.append(index-1)
             # print(f"Start index: {start_index}")
-        if b == int.from_bytes(b'\xf2', "big"):
+        if b == int.from_bytes(b'\xf2', "big") and not prev_char == int.from_bytes(b'\xf3', "big"):
             end_index = index
+        elif b == int.from_bytes(b'\xf2', "big") and prev_char == int.from_bytes(b'\xf3', "big"):
+            remove_indices.append(index-1)
+        if b == int.from_bytes(b'\xf3', "big") and prev_char == int.from_bytes(b'\xf3', "big"):
+            remove_indices.append(index-1)
+        prev_char = b
+
+    frame_byte_array = bytearray(frame)
+    for ind in remove_indices:
+        del frame_byte_array[ind]  # remove from byte array
             # print(f"End index: {end_index}")
-    return frame[start_index+1:end_index]
-# test message packing
-# msg = Message()
-# tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)  # len 1
-# msg.add_tlv(tlv_command)
-# tlv_reply = create_reply_tlv(TlvReply.REPLY_ERROR_REPORT)  # len 1
-# msg.add_tlv(tlv_reply)
-# tlv_motor_position = create_motor_position_tlv(123, 123, 123)  # len 12
-# msg.add_tlv(tlv_motor_position)
-# tlv_motor_current = create_current_reading_tlv(12345)  # len 2
-# msg.add_tlv(tlv_motor_current)
-# tlv_sfp_calib = create_sfp_calibration_tlv(200, 400)  # len 8
-# msg.add_tlv(tlv_sfp_calib)
-# tlv_error_report = create_error_report_tlv(123)  # len 4
-# msg.add_tlv(tlv_error_report)
-# tlv_power_reading = create_power_reading_tlv(130)  # len 2
-# msg.add_tlv(tlv_power_reading)
-# tlv_encoder = create_encoder_value_tlv(55, 66)  # len 8
-# msg.add_tlv(tlv_encoder)
-# tlv_checksum = create_checksum_tlv(msg)
-# msg.add_tlv(tlv_checksum)
 
-# framed_msg = build_frame(msg.encode())
-# print(framed_msg)
-
-# # parse message, discard frames, look for them elsewhere TODO
-# framed_msg = framed_msg[1:-1]
-# print(framed_msg)
-
-# message_parse(framed_msg)
-
-# message_result, decoded_message = message_parse(encoded_message.tlvs)
-
-# for decoded_tlv in decoded_message.tlvs:
-#     decoded_tlv.to_string()
+    frame = bytes(frame_byte_array)
+    return frame[start_index+1:end_index - len(remove_indices)]

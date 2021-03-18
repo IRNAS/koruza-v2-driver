@@ -17,6 +17,9 @@ class MotorWrapper():
         self.position_y = None
         self.position_z = None
 
+        self.encoder_x = None
+        self.encoder_y = None
+
     def __del__(self):
         try:
             if self.ser:
@@ -43,24 +46,40 @@ class MotorWrapper():
         self.lock.release()
 
         response = read_frame(self.ser)  # read response
+        # cleaning files on this
+        # response = b"\xf1\x02\x00\x01\x01\x04\x00\x0c\x00\x00'\x10\x00\x00'\x10\x00\x00\x00\x00\t\x00\x08\x00\x00\x00[\xff\xff\xff\xf3\xf2\x03\x00\x04\x86\x80\xbbz\xf2"
+        print(f"Received response: {response}")
         response_clean = clean_frame(response)
         print(f"Cleaned response: {response_clean}")
-        parsed = message_parse(response_clean)
-        # parse motor position from message
-        print(f"Num decoded tlvs: {len(parsed[1].tlvs)}")
-        if parsed[0] == MessageResult.MESSAGE_SUCCESS:
-            # print(parsed[1])
-            message = parsed[1]
-            for tlv in message.tlvs:
-                # print("new TLV")
-                if tlv.type == TlvType.TLV_MOTOR_POSITION:  # get data from reply
-                    print(tlv.to_string())
+        try:
+            parsed = message_parse(response_clean)
+            # parse motor position from message
+            # print(f"Num decoded tlvs: {len(parsed[1].tlvs)}")
+            if parsed[0] == MessageResult.MESSAGE_SUCCESS:
+                # print(parsed[1])
+                message = parsed[1]
+                for tlv in message.tlvs:
+                    # print("new TLV")
+                    if tlv.type == TlvType.TLV_MOTOR_POSITION:  # get data from reply
+                        self.position_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
+                        self.position_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
+                        self.position_z = bytes_to_int(bytearray(tlv.value[8:12]), signed=True)
+                        print(f"pos x: {self.position_x}")
+                        print(f"pos y: {self.position_y}")
+                        print(f"pos z: {self.position_z}")
+                
+                    if tlv.type == TlvType.TLV_ENCODER_VALUE:  # get data from reply
+                        self.encoder_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
+                        self.encoder_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
+                        print(f"encoder x: {self.encoder_x}")
+                        print(f"encoder y: {self.encoder_y}")
+
+        except Exception as e:
+            print(f"Trouble parsing response: {e}")
+
 
     def restore_motor(self, pos_x, pos_y, pos_z):
         """Restore motors to default position"""
-        # pos_x = self.status["motors"]["x"]
-        # pos_y = self.status["motors"]["y"]
-        # pos_z = self.status["motors"]["z"]
 
         print(f"Restoring motors to: {pos_x}, {pos_y}, {pos_z}")
         msg = Message()
