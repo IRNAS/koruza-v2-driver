@@ -1,19 +1,19 @@
-import board
-import neopixel
 import time
-import RPi.GPIO as GPIO
+import board
 import logging
+import neopixel
+import RPi.GPIO as GPIO
 
 # to install:
 # sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
 # sudo python3 -m pip install --force-reinstall adafruit-blinka
 
-class LEDDriver(object):
+class LedDriver(object):
     def __init__(self):
         """
         Class constructor.
         """
-        pin = board.D18
+        pin = board.D12  # rgb led is on GPIO 12
         self.n_pixels = 1
         # order to GRBW -- it's wrong! setting to GRBW makes it RGBW
         ORDER = neopixel.GRB
@@ -23,9 +23,20 @@ class LEDDriver(object):
     def __del__(self):
         """
         """
+        self.mode = 0
         self.pixels[0] = (0,0,0)
         self.pixels.show()
         self.pixels = None
+        # print("DELETING LED DRIVER")
+        # time.sleep(1)
+
+    def turn_off(self):
+        """Turn LED off"""
+        self.mode = 0
+        self.pixels[0] = (0,0,0)
+        self.pixels.show()
+        self.pixels = None
+        # time.sleep(1)
 
     def set_color(self, color, mode):
         """
@@ -33,16 +44,18 @@ class LEDDriver(object):
             0: shine
             105: blink 0.5s
         """
+        self.mode = mode
+
         if color == "blue":
             code = (0,0,255)
         
         self.pixels[0] = code
         
-        if mode == 0:
+        if self.mode == 0:
             self.pixels.show()
         
         else:
-            while mode == 105:
+            while self.mode == 105:
                 self.pixels.show()
                 time.sleep(0.5)
                 self.pixels[0] = (0,0,0)
@@ -64,6 +77,6 @@ class LEDDriver(object):
         self.pixels.show()
         pass
 
-if __name__ == "__main__":
-    led = LEDDriver()
-    led.set_color("blue",105)
+# if __name__ == "__main__":
+#     led = LedDriver()
+#     led.set_color("blue",105)

@@ -3,8 +3,8 @@ import serial
 import time
 from threading import Lock
 
-from motor_driver_wrapper import MotorWrapper
-from communication import *
+from .motor_driver_wrapper import MotorWrapper
+from .communication import *
 
 def read_frame():
     """Read frame, starting with 0xf1 and ending with 0xf2"""
@@ -103,21 +103,28 @@ def parse_test_vector(vector):
 # print(packed)
 # ser.write(packed)
 
-lock = Lock()
 # time.sleep(5)
-motor_driver = MotorWrapper("/dev/ttyAMA0", baudrate=115200, timeout=2, lock=lock)
+motor_driver = MotorWrapper("/dev/ttyAMA0", baudrate=115200, timeout=2)
 # manually restore motor position at init
 # motor_driver.restore_motor(0, 0, 0)
+# motor_driver.get_motor_status()
+
+time.sleep(60)
 # time.sleep(1)
-motor_driver.get_motor_status()
-
-# time.sleep(2)
 # print("MOVING FOR 1000 0 0")
-# motor_driver.move_motor(True, 1000, 0, 0)
+# motor_driver.move_motor(-10000, 0, 0)
 
-# time.sleep(2)
+# time.sleep(15)
 # print("MOVING FOR -1000 0 0")
-# motor_driver.move_motor(True, -1000, 0, 0)
+# motor_driver.move_motor(5000, 0, 0)
+
+# time.sleep(10)
+# print("MOVING FOR 1000 0 0")
+# motor_driver.move_motor(0, -10000, 0)
+
+# time.sleep(15)
+# print("MOVING FOR -1000 0 0")
+# motor_driver.move_motor(0, 5000, 0)
 
 # # # MOVE Y MOTOR
 # time.sleep(2)
@@ -139,6 +146,16 @@ motor_driver.get_motor_status()
 # time.sleep(2)
 # print("MOVING FOR 1000 1000 1000")
 # motor_driver.move_motor(True, 10000, 10000, 0)
+
+# MOVE LEFT
+# x - current position + move? - probably
+# y - movement for 0x80000000 - max int
+# motor_driver.move_motor(True, 1000, 0, 0)
+
+# MOVE UP
+# x - movement for 0x80000000 - max int
+# y - current position + move
+
 
 # time.sleep(1)
 # home motors
