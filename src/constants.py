@@ -12,3 +12,11 @@ I2C_CHANNEL_RPI = 1
 #
 #
 #
+
+# =========== NETWORK ===============
+LOCALHOST = ""   # TODO find a way to implement below code:
+"""
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+LOCALHOST = s.getsockname()[0]
+"""

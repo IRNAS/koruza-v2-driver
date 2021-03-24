@@ -26,6 +26,7 @@ class LedDriver(object):
         self.mode = 0
         self.pixels[0] = (0,0,0)
         self.pixels.show()
+        # time.sleep(2)
         self.pixels = None
         # print("DELETING LED DRIVER")
         # time.sleep(1)
@@ -35,7 +36,8 @@ class LedDriver(object):
         self.mode = 0
         self.pixels[0] = (0,0,0)
         self.pixels.show()
-        self.pixels = None
+        # time.sleep(2)
+        # self.pixels = None
         # time.sleep(1)
 
     def set_color(self, color, mode):
