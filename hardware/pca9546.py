@@ -6,18 +6,18 @@ Manual: PCA9554_9554A.pdf
 Copyright (C) 2019 Vid Rajtmajer <vid@irnas.eu>
 """
 import logging
-import smbus
+from smbus2 import SMBus
 
-from ...src.constants import I2C_CHANNEL_RPI
+from ..src.constants import I2C_CHANNEL
 
 
-class Pca9546(object):
+class Pca9546():
     def __init__(self, address):
         """Init smbus channel and Pca9546 driver on specified address."""
         try:
-            self.i2c_bus = smbus.SMBus(I2C_CHANNEL_RPI)
+            self.i2c_bus = SMBus(I2C_CHANNEL)
             self.i2c_address = address              # whatever we see on RPi
-            if self.read_input_register() is None:
+            if self.read_config_register() is None:
                 raise ValueError
         except ValueError:
             logging.error("Pca9546 ERROR: No device found on address {}!".format(hex(address)))
@@ -37,11 +37,12 @@ class Pca9546(object):
         except:
             return None
 
-    def select_channel(self, ch0=0, ch1=0, ch2=0, ch3=0):
+    def select_channel(self, val=None, ch0=0, ch1=0, ch2=0, ch3=0):
         """
 
         """
-        val = ch0 | (ch1<<1) | (ch2<<2) | (ch3<<3)
+        if val is None:
+            val = ch0 | (ch1<<1) | (ch2<<2) | (ch3<<3)
         try:
             self.i2c_bus.write_byte(self.i2c_address, val)
             return True

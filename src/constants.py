@@ -2,7 +2,7 @@
 # ========== I2C ====================
 
 #RPi I2C channel
-I2C_CHANNEL_RPI = 1
+I2C_CHANNEL = 1
 
 #SFP ADDRESSES
 
