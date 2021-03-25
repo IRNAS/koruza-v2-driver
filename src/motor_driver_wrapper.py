@@ -25,7 +25,7 @@ class MotorWrapper():
 
         self.motors_connected = False  # set to true when first data is read
 
-        self.restore_motor(0, 0, 0)  # restore motor on init - restore to previous stored position in koruza.py - restore to 0,0,0 here
+        # self.restore_motor(0, 0, 0)  # restore motor on init - restore to previous stored position in koruza.py - restore to 0,0,0 here
         time.sleep(0.5)
 
         self.motor_data_thread = Thread(target=self.motor_status_loop, daemon=True)
@@ -46,7 +46,9 @@ class MotorWrapper():
             # time.sleep(1)
             if self.motor_loop_running:
                 ret = self.get_motor_status()
-                # print(ret)
+                if ret is not None and not self.motors_connected:
+                    self.motors_connected = True
+                    self.restore_motor()
                 if ret is None:
                     self.motors_connected = False
                 # call every 0.5s - it's like this in the original firmware
@@ -79,7 +81,7 @@ class MotorWrapper():
              
         # cleaning files on this
         # response = b"\xf1\x02\x00\x01\x01\x04\x00\x0c\x00\x00'\x10\x00\x00'\x10\x00\x00\x00\x00\t\x00\x08\x00\x00\x00[\xff\xff\xff\xf3\xf2\x03\x00\x04\x86\x80\xbbz\xf2"
-        self.motors_connected = True  # set motors connected if message was received
+        # self.motors_connected = True  # set motors connected if message was received
         
         # print(f"Received response: {response}")
         response_clean = clean_frame(response)
@@ -116,14 +118,15 @@ class MotorWrapper():
             return False  # return False if message received but failed to parse
 
 
-    def restore_motor(self, pos_x, pos_y, pos_z):
+    def restore_motor(self):
         """Restore motors to default position"""
 
-        print(f"Restoring motors to: {pos_x}, {pos_y}, {pos_z}")
+        # print(f"Restoring motors to: {pos_x}, {pos_y}, {pos_z}")
+        print(f"Restoring motor position!")
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_RESTORE_MOTOR)
         msg.add_tlv(tlv_command)
-        motor_position = create_motor_position_tlv(pos_x, pos_y, pos_z)
+        motor_position = create_motor_position_tlv(self.position_x, self.position_y, self.position_z)
         msg.add_tlv(motor_position)
         checksum = create_checksum_tlv(msg)
         msg.add_tlv(checksum)
@@ -164,7 +167,7 @@ class MotorWrapper():
         self.lock.release()
         return True
 
-    def homing(self):
+    def home(self):
         """Home to center"""
 
         if not self.motors_connected:
@@ -173,7 +176,7 @@ class MotorWrapper():
         msg = Message()
         cmd_home_motor = create_command_tlv(TlvCommand.COMMAND_HOMING)
         msg.add_tlv(cmd_home_motor)
-        checksum = create_checksum_tlv(msg.tlvs)
+        checksum = create_checksum_tlv(msg)
         msg.add_tlv(checksum)
         encoded_msg = msg.encode()
         frame = build_frame(encoded_msg)

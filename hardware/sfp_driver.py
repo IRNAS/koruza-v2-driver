@@ -52,7 +52,9 @@ class Sfp():
             "diagnostics": {
                 "temp": None,
                 "tx_power_dBm": None,
-                "rx_power_dBm": None
+                "rx_power_dBm": None,
+                "tx_power": None,
+                "rx_power": None
             }
         }
 
@@ -155,6 +157,7 @@ class Sfp():
         tx_bytes = diagnostics_block[TX_POWER_OFFSET:RX_POWER_OFFSET]
         tx_power = np.uint16((tx_bytes[0] << 8) | tx_bytes[1]) / 1000  # LSB is equal to 100 uW, so the range is [0, 6.5535]mW
         # print(f"Tx power: {tx_power}mW")
+        self.data["diagnostics"]["tx_power"] = tx_power
         tx_power_dbm = round(self.convert_to_dB(tx_power), 3)
         # print(f"Tx power: {tx_power_dbm}dBm")
         self.data["diagnostics"]["tx_power_dBm"] = tx_power_dbm
@@ -163,6 +166,7 @@ class Sfp():
         rx_bytes = diagnostics_block[RX_POWER_OFFSET:]
         rx_power = np.uint16((rx_bytes[0] << 8) | rx_bytes[1]) / 1000 # LSB is equal to 100 uW, so the range is [0, 6.5535]mW
         # print(f"Rx power: {rx_power}mW")
+        self.data["diagnostics"]["rx_power"] = rx_power
         rx_power_dbm = round(self.convert_to_dB(rx_power), 3)
         # print(f"Rx power: {rx_power_dbm}dBm")
         self.data["diagnostics"]["rx_power_dBm"] = rx_power_dbm

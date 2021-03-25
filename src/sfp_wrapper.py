@@ -3,10 +3,11 @@ import logging
 
 from ..hardware.sfp_driver import Sfp
 from ..hardware.pca9546 import Pca9546
+from .constants import SFP_TRANSMIT, SFP_RECEIVE
 
 Pca9546_address = 0x70
-SFP_0_line = 0x01
-SFP_1_line = 0x02
+SFP_TRANSMIT_line = 0x01
+SFP_RECEIVE_line = 0x02
 
 class SfpWrapper():
     def __init__(self):
@@ -46,7 +47,7 @@ class SfpWrapper():
             
             print("Initing sfp 0")
             # initialize sfp_0
-            self.switch.select_channel(val=SFP_0_line)
+            self.switch.select_channel(val=SFP_TRANSMIT_line)
             try:
                 self.sfp_0 = Sfp()
                 self.data["sfp_0"]["module_info"] = self.sfp_0.get_module_info()
@@ -55,7 +56,7 @@ class SfpWrapper():
 
             print("Initing sfp 1")
             # initialize sfp_1
-            self.switch.select_channel(val=SFP_1_line)
+            self.switch.select_channel(val=SFP_RECEIVE_line)
             try:
                 self.sfp_1 = Sfp()
                 self.data["sfp_1"]["module_info"] = self.sfp_1.get_module_info()
@@ -66,18 +67,18 @@ class SfpWrapper():
         """Get data from both sfp's"""
         if self.switch is not None:
             
-            print("Getting sfp 0 data")
+            # print("Getting sfp 0 data")
             # initialize sfp_0
-            self.switch.select_channel(val=SFP_0_line)
+            self.switch.select_channel(val=SFP_TRANSMIT_line)
             try:
                 self.data["sfp_0"]["diagnostics"] = self.sfp_0.get_diagnostics()
                 # print(self.data["sfp_0"])
             except Exception as e:
                 logging.error(e)
 
-            print("Getting sfp 1 data")
+            # print("Getting sfp 1 data")
             # initialize sfp_1
-            self.switch.select_channel(val=SFP_1_line)
+            self.switch.select_channel(val=SFP_RECEIVE_line)
             try:
                 self.data["sfp_1"]["diagnostics"] = self.sfp_1.get_diagnostics()
                 # print(self.data["sfp_1"])
