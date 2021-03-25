@@ -6,11 +6,11 @@ from .communication import *
 from threading import Thread, Lock
 
 class MotorWrapper():
-    def __init__(self, serial_port, baudrate=115200, timeout=2):
+    def __init__(self, serial_handler, lock):
         """Initialize motor wrapper"""
         self.ser = None
-        self.ser = serial.Serial(serial_port, baudrate, timeout=timeout)
-        self.lock = Lock()
+        self.ser = serial_handler
+        self.lock = lock
 
         self.motor_wrapper_running = False
 
@@ -25,7 +25,7 @@ class MotorWrapper():
 
         self.motors_connected = False  # set to true when first data is read
 
-        # self.restore_motor(0, 0, 0)  # restore motor on init - restore to previous stored position in koruza.py - restore to 0,0,0 here
+        self.restore_motor(0, 0, 0)  # restore motor on init - restore to previous stored position in koruza.py - restore to 0,0,0 here
         time.sleep(0.5)
 
         self.motor_data_thread = Thread(target=self.motor_status_loop, daemon=True)
@@ -46,9 +46,10 @@ class MotorWrapper():
             # time.sleep(1)
             if self.motor_loop_running:
                 ret = self.get_motor_status()
-                if ret is not None and not self.motors_connected:
+                # print(f"Motor status res: {ret}")
+                if ret is not None:
                     self.motors_connected = True
-                    self.restore_motor()
+                    # self.restore_motor()
                 if ret is None:
                     self.motors_connected = False
                 # call every 0.5s - it's like this in the original firmware
@@ -74,6 +75,7 @@ class MotorWrapper():
         
         try:
             response = read_frame(self.ser)  # read response
+            # return True
         except Exception as e:
             print(e)
             self.lock.release()
@@ -94,11 +96,14 @@ class MotorWrapper():
                 # print(parsed[1])
                 message = parsed[1]
                 for tlv in message.tlvs:
+                    # print(tlv)
                     # print("new TLV")
                     if tlv.type == TlvType.TLV_MOTOR_POSITION:  # get data from reply
+                        # print("MOTOR POSITION TLV")
                         self.position_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
                         self.position_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
                         self.position_z = bytes_to_int(bytearray(tlv.value[8:12]), signed=True)
+                        
                         # print(f"pos x: {self.position_x}")
                         # print(f"pos y: {self.position_y}")
                         # print(f"pos z: {self.position_z}")
@@ -118,15 +123,21 @@ class MotorWrapper():
             return False  # return False if message received but failed to parse
 
 
-    def restore_motor(self):
+    def restore_motor(self, pos_x=0, pos_y=0, pos_z=0):
         """Restore motors to default position"""
 
+        if self.position_x is not None:
+            pos_x = self.position_x
+        if self.position_y is not None:
+            pos_y = self.position_y
+        if self.position_z is not None:
+            pos_z = self.position_z
         # print(f"Restoring motors to: {pos_x}, {pos_y}, {pos_z}")
         print(f"Restoring motor position!")
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_RESTORE_MOTOR)
         msg.add_tlv(tlv_command)
-        motor_position = create_motor_position_tlv(self.position_x, self.position_y, self.position_z)
+        motor_position = create_motor_position_tlv(pos_x, pos_y, pos_z)
         msg.add_tlv(motor_position)
         checksum = create_checksum_tlv(msg)
         msg.add_tlv(checksum)

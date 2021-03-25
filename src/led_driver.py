@@ -53,8 +53,9 @@ class LedDriver():
         g = int(color_split[2:4], 16)
         b = int(color_split[4:6], 16)
 
-        # print(f"Color: {color}")
+        # print(f"R:  {r} G: {g} B: {b}")
 
+        # b = 0
         code = (r, g, b)
 
         # if color == "blue":
