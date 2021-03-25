@@ -48,8 +48,17 @@ class LedDriver():
         """
         self.mode = mode
 
-        if color == "blue":
-            code = (0,0,255)
+        color_split = color[1:]
+        r = int(color_split[0:2], 16)
+        g = int(color_split[2:4], 16)
+        b = int(color_split[4:6], 16)
+
+        # print(f"Color: {color}")
+
+        code = (r, g, b)
+
+        # if color == "blue":
+        #     code = (0,0,255)
         
         self.pixels[0] = code
         
