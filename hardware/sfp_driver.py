@@ -147,7 +147,7 @@ class Sfp():
         temp_l = self.convert_to_fp(temp_bytes[1], 8, 256)
         temp = temp_h + temp_l
         # print(f"Temp: {temp}")
-        self.data["diagnostics"]["temp"] = temp
+        # self.data["diagnostics"]["temp"] = temp
 
         # next is transciever supply voltage - skip this for now
 
@@ -155,21 +155,21 @@ class Sfp():
 
         # next is tx output power in mW
         tx_bytes = diagnostics_block[TX_POWER_OFFSET:RX_POWER_OFFSET]
-        tx_power = np.uint16((tx_bytes[0] << 8) | tx_bytes[1]) / 1000  # LSB is equal to 100 uW, so the range is [0, 6.5535]mW
+        tx_power = int(np.uint16((tx_bytes[0] << 8) | tx_bytes[1]) / 1000)  # LSB is equal to 100 uW, so the range is [0, 6.5535]mW
         # print(f"Tx power: {tx_power}mW")
         self.data["diagnostics"]["tx_power"] = tx_power
         tx_power_dbm = round(self.convert_to_dB(tx_power), 3)
         # print(f"Tx power: {tx_power_dbm}dBm")
-        self.data["diagnostics"]["tx_power_dBm"] = tx_power_dbm
+        self.data["diagnostics"]["tx_power_dBm"] = float(tx_power_dbm)
 
         # next is rx received power in mW
         rx_bytes = diagnostics_block[RX_POWER_OFFSET:]
-        rx_power = np.uint16((rx_bytes[0] << 8) | rx_bytes[1]) / 1000 # LSB is equal to 100 uW, so the range is [0, 6.5535]mW
+        rx_power = int(np.uint16((rx_bytes[0] << 8) | rx_bytes[1]) / 1000) # LSB is equal to 100 uW, so the range is [0, 6.5535]mW
         # print(f"Rx power: {rx_power}mW")
         self.data["diagnostics"]["rx_power"] = rx_power
         rx_power_dbm = round(self.convert_to_dB(rx_power), 3)
         # print(f"Rx power: {rx_power_dbm}dBm")
-        self.data["diagnostics"]["rx_power_dBm"] = rx_power_dbm
+        self.data["diagnostics"]["rx_power_dBm"] = float(rx_power_dbm)
 
         return self.data["diagnostics"]
 

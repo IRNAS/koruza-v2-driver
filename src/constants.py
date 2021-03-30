@@ -4,11 +4,6 @@
 #RPi I2C channel
 I2C_CHANNEL = 1
 
-#SFP ADDRESSES
-SFP_TRANSMIT = 0  # sfp identifier
-SFP_RECEIVE = 1
-#MUX ADDRESS
-
 # =========== TLV ===================
 #
 #

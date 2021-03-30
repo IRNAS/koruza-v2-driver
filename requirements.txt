@@ -1,3 +1,4 @@
 pyserial==3.5
 numpy==1.20.1
 smbus2==0.4.1
+adafruit-circuitpython-neopixel==6.0.2

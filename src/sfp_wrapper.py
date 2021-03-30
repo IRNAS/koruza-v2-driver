@@ -3,11 +3,13 @@ import logging
 
 from ..hardware.sfp_driver import Sfp
 from ..hardware.pca9546 import Pca9546
-from .constants import SFP_TRANSMIT, SFP_RECEIVE
 
 Pca9546_address = 0x70
 SFP_TRANSMIT_line = 0x01
 SFP_RECEIVE_line = 0x02
+
+SFP_TRANSMIT = 0
+SFP_RECEIVE = 1
 
 class SfpWrapper():
     def __init__(self):
@@ -30,6 +32,8 @@ class SfpWrapper():
                 "diagnostics": None
             }
         }
+
+        # diagnostics is rx and tx power and temperature
 
         try:
             self.switch = Pca9546(Pca9546_address)
@@ -92,6 +96,10 @@ class SfpWrapper():
     def get_module_diagnostics(self, module_select):
         """Return module diagnostics of selected module"""
         return self.data[f"sfp_{module_select}"]["diagnostics"]
+
+    def get_complete_diagnostics(self):
+        """Return both sets of diagnostics"""
+        return self.data
 
 # wrapper = SfpWrapper()
 # for i in range(0, 100):

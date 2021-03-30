@@ -150,9 +150,30 @@ class MotorWrapper():
         self.lock.release()
         return True
         
+    def move_motor_to(self, x, y, z):
+        """Move motor to set position"""
+        if not self.motors_connected:
+            return False
+
+        # received resp
+        msg = Message()
+        tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
+        msg.add_tlv(tlv_command)
+        motor_position = create_motor_position_tlv(x, y, z)
+        msg.add_tlv(motor_position)
+        checksum = create_checksum_tlv(msg)
+        msg.add_tlv(checksum)
+        encoded_msg = msg.encode()
+        frame = build_frame(encoded_msg)
+        print(frame)
+
+        self.lock.acquire()
+        self.ser.write(frame)  # send message over serial
+        self.lock.release()
+        return True
 
     def move_motor(self, x, y, z):
-        """Move motor to set position"""
+        """Move motor relative to current position"""
 
         if not self.motors_connected:
             return False
