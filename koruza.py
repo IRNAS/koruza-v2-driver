@@ -6,8 +6,11 @@ from .src.sfp_wrapper import SfpWrapper
 from .src.motor_driver_wrapper import MotorWrapper
 from .src.communication import *
 
+from ..src.constants import BLE_PORT
+
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
+import xmlrpc.client
 
 class Koruza():
     def __init__(self):
@@ -35,6 +38,15 @@ class Koruza():
             print("Initialized Sfp Wrapper")
         except Exception as e:
             print("Failed to init SFP Wrapper")
+
+        self.ble_driver = None
+
+    def issue_ble_command(self, command, params):
+        """Issue ble command with a new client connection, close connection after call"""
+        return  # TODO implement BLE client
+        with xmlrpc.client.ServerProxy(f"http://localhost:{BLE_PORT}", allow_none=True) as client:
+            print(f"Issuing ble command {command} with {params}")
+            client.send_command(command, params)  
 
     def get_sfp_data(self):
         self.sfp_wrapper.update_sfp_diagnostics()

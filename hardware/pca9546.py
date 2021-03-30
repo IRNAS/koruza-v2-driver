@@ -8,7 +8,7 @@ Copyright (C) 2019 Vid Rajtmajer <vid@irnas.eu>
 import logging
 from smbus2 import SMBus
 
-from ..src.constants import I2C_CHANNEL
+from ...src.constants import I2C_CHANNEL
 
 
 class Pca9546():
