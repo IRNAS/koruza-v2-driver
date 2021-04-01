@@ -46,13 +46,8 @@ class MotorWrapper():
             # time.sleep(1)
             if self.motor_loop_running:
                 ret = self.get_motor_status()
-                # print(f"Motor status res: {ret}")
-                if ret is not None:
-                    self.motors_connected = True
-                    # self.restore_motor()
                 if ret is None:
                     self.motors_connected = False
-                # call every 0.5s - it's like this in the original firmware
             else:
                 break
             time.sleep(0.5)
@@ -72,14 +67,19 @@ class MotorWrapper():
 
         self.lock.acquire()
         self.ser.write(frame)  # send message over serial
-        
         try:
             response = read_frame(self.ser)  # read response
+            self.lock.release()
+            # print(response)
             # return True
         except Exception as e:
             print(e)
             self.lock.release()
             return None  # return None if serial timed out - no motor connected
+
+        if not self.motors_connected:
+            self.motors_connected = True
+            self.restore_motor(0, 0, 0)
              
         # cleaning files on this
         # response = b"\xf1\x02\x00\x01\x01\x04\x00\x0c\x00\x00'\x10\x00\x00'\x10\x00\x00\x00\x00\t\x00\x08\x00\x00\x00[\xff\xff\xff\xf3\xf2\x03\x00\x04\x86\x80\xbbz\xf2"
@@ -114,7 +114,7 @@ class MotorWrapper():
                         # print(f"encoder x: {self.encoder_x}")
                         # print(f"encoder y: {self.encoder_y}")
 
-            self.lock.release()  # release lock after completion/failure
+            # self.lock.release()  # release lock after completion/failure
             return True  # return True if success
 
         except Exception as e:

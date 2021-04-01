@@ -5,11 +5,11 @@ from ..hardware.sfp_driver import Sfp
 from ..hardware.pca9546 import Pca9546
 
 Pca9546_address = 0x70
-SFP_TRANSMIT_line = 0x01
-SFP_RECEIVE_line = 0x02
+SFP_CAMERA_line = 0x01
+SFP_OUT_line = 0x02
 
-SFP_TRANSMIT = 0
-SFP_RECEIVE = 1
+SFP_CAMERA = 0
+SFP_OUT = 1
 
 class SfpWrapper():
     def __init__(self):
@@ -51,7 +51,7 @@ class SfpWrapper():
             
             print("Initing sfp 0")
             # initialize sfp_0
-            self.switch.select_channel(val=SFP_TRANSMIT_line)
+            self.switch.select_channel(val=SFP_CAMERA_line)
             try:
                 self.sfp_0 = Sfp()
                 self.data["sfp_0"]["module_info"] = self.sfp_0.get_module_info()
@@ -60,7 +60,7 @@ class SfpWrapper():
 
             print("Initing sfp 1")
             # initialize sfp_1
-            self.switch.select_channel(val=SFP_RECEIVE_line)
+            self.switch.select_channel(val=SFP_OUT_line)
             try:
                 self.sfp_1 = Sfp()
                 self.data["sfp_1"]["module_info"] = self.sfp_1.get_module_info()
@@ -73,7 +73,7 @@ class SfpWrapper():
             
             # print("Getting sfp 0 data")
             # initialize sfp_0
-            self.switch.select_channel(val=SFP_TRANSMIT_line)
+            self.switch.select_channel(val=SFP_CAMERA_line)
             try:
                 self.data["sfp_0"]["diagnostics"] = self.sfp_0.get_diagnostics()
                 # print(self.data["sfp_0"])
@@ -82,7 +82,7 @@ class SfpWrapper():
 
             # print("Getting sfp 1 data")
             # initialize sfp_1
-            self.switch.select_channel(val=SFP_RECEIVE_line)
+            self.switch.select_channel(val=SFP_OUT_line)
             try:
                 self.data["sfp_1"]["diagnostics"] = self.sfp_1.get_diagnostics()
                 # print(self.data["sfp_1"])

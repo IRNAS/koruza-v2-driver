@@ -4,6 +4,7 @@ from threading import Thread, Lock
 from .src.led_driver import LedDriver
 from .src.sfp_wrapper import SfpWrapper
 from .src.motor_driver_wrapper import MotorWrapper
+from .src.gpio_control import GpioControl
 from .src.communication import *
 
 from ..src.constants import BLE_PORT
@@ -38,6 +39,9 @@ class Koruza():
             print("Initialized Sfp Wrapper")
         except Exception as e:
             print("Failed to init SFP Wrapper")
+
+        self.gpio_control = GpioControl()
+        self.gpio_control.sfp_config()
 
         self.ble_driver = None
 
@@ -110,8 +114,7 @@ class Koruza():
 
     def hard_reset(self):
         """Hard reset koruza unit"""
-        # TODO find correct GPIO pin and implement
-        pass
+        self.gpio_control.koruza_reset()
 
     def calibration_forward_transform(self):
         """Calibration forward transform"""
