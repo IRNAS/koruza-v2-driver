@@ -49,7 +49,7 @@ class SfpWrapper():
         """Initialize wrapper"""
         if self.switch is not None:
             
-            print("Initing sfp 0")
+            # print("Initing sfp 0")
             # initialize sfp_0
             self.switch.select_channel(val=SFP_CAMERA_line)
             try:
@@ -58,7 +58,7 @@ class SfpWrapper():
             except Exception as e:
                 logging.error(e)
 
-            print("Initing sfp 1")
+            # print("Initing sfp 1")
             # initialize sfp_1
             self.switch.select_channel(val=SFP_OUT_line)
             try:

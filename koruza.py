@@ -1,4 +1,6 @@
 import serial
+import logging
+import json
 from threading import Thread, Lock
 
 from .src.led_driver import LedDriver
@@ -13,11 +15,23 @@ from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 import xmlrpc.client
 
+log = logging.getLogger()
+SETTINGS_FILE = "./koruza_v2/config.json"  # load settings file on init and write current motor pos and calibration
+
 class Koruza():
     def __init__(self):
         """Initialize koruza.py wrapper with all drivers"""
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
+
+
+        # load settings from json
+        try:
+            with open(SETTINGS_FILE) as config_file:
+                self.settings = json.load(config_file)
+        except Exception as e:
+            log.error(f"Can not open settings.json. Error: {e}")
+
 
         self.motor_wrapper = None
         try:
@@ -54,7 +68,8 @@ class Koruza():
 
     def get_sfp_data(self):
         self.sfp_wrapper.update_sfp_diagnostics()
-        return self.sfp_wrapper.get_complete_diagnostics()
+        sfp_data = self.sfp_wrapper.get_complete_diagnostics()
+        return sfp_data
 
     def get_motors_position(self):
         """Expose getter for motor position"""
@@ -90,7 +105,7 @@ class Koruza():
         msg.add_tlv(checksum)
         encoded_msg = msg.encode()
         frame = build_frame(encoded_msg)
-        print(frame)
+        # print(frame)
 
         self.lock.acquire()
         self.ser.write(frame)  # send message over serial

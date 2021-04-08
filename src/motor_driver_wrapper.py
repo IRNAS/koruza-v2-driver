@@ -1,21 +1,33 @@
 import time
 import serial
 import math 
+import logging
+import json
 
 from .communication import *
 from threading import Thread, Lock
 
+log = logging.getLogger()
+SETTINGS_FILE = "./koruza_v2/config.json"  # load settings file on init and write current motor pos and calibration
+
 class MotorWrapper():
     def __init__(self, serial_handler, lock):
         """Initialize motor wrapper"""
+        # load settings from json
+        try:
+            with open(SETTINGS_FILE) as config_file:
+                self.settings = json.load(config_file)
+        except Exception as e:
+            log.error(f"Can not open settings.json. Error: {e}")
+
         self.ser = None
         self.ser = serial_handler
         self.lock = lock
 
         self.motor_wrapper_running = False
 
-        self.position_x = None
-        self.position_y = None
+        self.position_x = self.settings["motors"]["last_x"]  # read from json file
+        self.position_y = self.settings["motors"]["last_y"]  # read from json file
         self.position_z = None
 
         self.encoder_x = None
@@ -25,7 +37,8 @@ class MotorWrapper():
 
         self.motors_connected = False  # set to true when first data is read
 
-        self.restore_motor(0, 0, 0)  # restore motor on init - restore to previous stored position in koruza.py - restore to 0,0,0 here
+
+        self.restore_motor(self.position_x, self.position_y, 0)  # restore motor on init - restore to previous stored position in koruza.py - restore to 0,0,0 here
         time.sleep(0.5)
 
         self.motor_data_thread = Thread(target=self.motor_status_loop, daemon=True)
@@ -79,7 +92,7 @@ class MotorWrapper():
 
         if not self.motors_connected:
             self.motors_connected = True
-            self.restore_motor(0, 0, 0)
+            self.restore_motor(self.position_x, self.position_y, 0)
              
         # cleaning files on this
         # response = b"\xf1\x02\x00\x01\x01\x04\x00\x0c\x00\x00'\x10\x00\x00'\x10\x00\x00\x00\x00\t\x00\x08\x00\x00\x00[\xff\xff\xff\xf3\xf2\x03\x00\x04\x86\x80\xbbz\xf2"
@@ -103,6 +116,15 @@ class MotorWrapper():
                         self.position_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
                         self.position_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
                         self.position_z = bytes_to_int(bytearray(tlv.value[8:12]), signed=True)
+
+                        # TODO implement lock
+                        try:
+                            with open(SETTINGS_FILE, "w") as config_file:
+                                self.settings["motors"]["last_x"] = self.position_x
+                                self.settings["motors"]["last_y"] = self.position_y
+                                json.dump(self.settings, config_file, indent=4)
+                        except Exception as e:
+                            print(e)
                         
                         # print(f"pos x: {self.position_x}")
                         # print(f"pos y: {self.position_y}")
