@@ -66,6 +66,8 @@ class SfpWrapper():
                 self.data["sfp_1"]["module_info"] = self.sfp_1.get_module_info()
             except Exception as e:
                 logging.error(e)
+                
+            print(self.data)
 
     def update_sfp_diagnostics(self):
         """Get data from both sfp's"""

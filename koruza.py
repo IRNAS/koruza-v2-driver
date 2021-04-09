@@ -10,13 +10,13 @@ from .src.gpio_control import GpioControl
 from .src.communication import *
 
 from ..src.constants import BLE_PORT
+from ..src.config_manager import config_manager
 
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 import xmlrpc.client
 
 log = logging.getLogger()
-SETTINGS_FILE = "./koruza_v2/config.json"  # load settings file on init and write current motor pos and calibration
 
 class Koruza():
     def __init__(self):
@@ -24,21 +24,12 @@ class Koruza():
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
 
-
-        # load settings from json
-        try:
-            with open(SETTINGS_FILE) as config_file:
-                self.settings = json.load(config_file)
-        except Exception as e:
-            log.error(f"Can not open settings.json. Error: {e}")
-
-
         self.motor_wrapper = None
         try:
             self.motor_wrapper = MotorWrapper(serial_handler=self.ser, lock=self.lock)  # open serial and start motor driver wrapper
             print("Initialized Motor Wrapper")
         except Exception as e:
-            print("Failed to init Motor Driver")
+            print(f"Failed to init Motor Driver: {e}")
 
         self.led_driver = None
         try:

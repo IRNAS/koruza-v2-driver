@@ -7,18 +7,16 @@ import json
 from .communication import *
 from threading import Thread, Lock
 
+from ...src.config_manager import config_manager
+
 log = logging.getLogger()
 SETTINGS_FILE = "./koruza_v2/config.json"  # load settings file on init and write current motor pos and calibration
 
 class MotorWrapper():
     def __init__(self, serial_handler, lock):
         """Initialize motor wrapper"""
-        # load settings from json
-        try:
-            with open(SETTINGS_FILE) as config_file:
-                self.settings = json.load(config_file)
-        except Exception as e:
-            log.error(f"Can not open settings.json. Error: {e}")
+        # init global json config manager
+        self.config_manager = config_manager
 
         self.ser = None
         self.ser = serial_handler
@@ -26,8 +24,8 @@ class MotorWrapper():
 
         self.motor_wrapper_running = False
 
-        self.position_x = self.settings["motors"]["last_x"]  # read from json file
-        self.position_y = self.settings["motors"]["last_y"]  # read from json file
+        self.position_x = self.config_manager.motors["last_x"]  # read from json file
+        self.position_y = self.config_manager.motors["last_y"]  # read from json file
         self.position_z = None
 
         self.encoder_x = None
@@ -117,26 +115,13 @@ class MotorWrapper():
                         self.position_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
                         self.position_z = bytes_to_int(bytearray(tlv.value[8:12]), signed=True)
 
-                        # TODO implement lock
-                        try:
-                            with open(SETTINGS_FILE, "w") as config_file:
-                                self.settings["motors"]["last_x"] = self.position_x
-                                self.settings["motors"]["last_y"] = self.position_y
-                                json.dump(self.settings, config_file, indent=4)
-                        except Exception as e:
-                            print(e)
-                        
-                        # print(f"pos x: {self.position_x}")
-                        # print(f"pos y: {self.position_y}")
-                        # print(f"pos z: {self.position_z}")
+                        # update config.json
+                        self.config_manager.update_motors_config([("last_x", self.position_x), ("last_y", self.position_y)])
                 
                     if tlv.type == TlvType.TLV_ENCODER_VALUE:  # get data from reply
                         self.encoder_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
                         self.encoder_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
-                        # print(f"encoder x: {self.encoder_x}")
-                        # print(f"encoder y: {self.encoder_y}")
 
-            # self.lock.release()  # release lock after completion/failure
             return True  # return True if success
 
         except Exception as e:
