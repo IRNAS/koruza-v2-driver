@@ -1,9 +1,7 @@
 """
-Pca9554 driver, NXP Semiconductors
-8 bit I2C expander, 8 GPIO ports
+Pca9546 driver, NXP Semiconductors
+4 bit I2C expander, 4 GPIO ports
 I2C SMBus protocol
-Manual: PCA9554_9554A.pdf
-Copyright (C) 2019 Vid Rajtmajer <vid@irnas.eu>
 """
 import logging
 from smbus2 import SMBus
