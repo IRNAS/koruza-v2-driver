@@ -178,7 +178,10 @@ class Sfp():
         """Get data"""
         return self.data["module_info"]
 
-# sfp = Sfp()
-# while True:
-#     sfp.get_diagnostics()
+    
+# TEST CODE
+# if __name__=="__main__":
+#   sfp = Sfp()
+#   while True:
+#       sfp.get_diagnostics()
 #     time.sleep(5)
