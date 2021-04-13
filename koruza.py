@@ -86,8 +86,8 @@ class Koruza():
         """Expose method for koruza homing"""
         self.motor_wrapper.home()
 
-    def reboot(self):
-        """Reboot koruza"""
+    def reboot_motor_driver(self):
+        """Reboot motor driver."""
         # not implemented on motor end
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_REBOOT)
@@ -103,8 +103,8 @@ class Koruza():
         self.lock.release()
         return True
 
-    def firmware_upgrade(self):
-        """Update koruza firmware"""
+    def upgrade_motor_driver(self):
+        """Update motor driver MCU firmware"""
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_FIRMWARE_UPGRADE)
         msg.add_tlv(tlv_command)
@@ -119,7 +119,7 @@ class Koruza():
         return True
 
     def hard_reset(self):
-        """Hard reset koruza unit"""
+        """Power cycle motor driver unit"""
         self.gpio_control.koruza_reset()
 
     def calibration_forward_transform(self):
