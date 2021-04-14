@@ -2,6 +2,7 @@
 Pca9546 driver, NXP Semiconductors
 4 bit I2C expander, 4 GPIO ports
 I2C SMBus protocol
+Datasheet: https://www.nxp.com/docs/en/data-sheet/PCA9546A.pdf
 """
 import logging
 from smbus2 import SMBus
@@ -9,7 +10,7 @@ from smbus2 import SMBus
 from ...src.constants import I2C_CHANNEL
 
 
-class Pca9546():
+class Pca9546a():
     def __init__(self, address):
         """Init smbus channel and Pca9546 driver on specified address."""
         try:

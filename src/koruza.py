@@ -3,17 +3,15 @@ import logging
 import json
 from threading import Thread, Lock
 
-from .src.led_driver import LedDriver
-from .src.sfp_wrapper import SfpWrapper
-from .src.motor_driver_wrapper import MotorWrapper
-from .src.gpio_control import GpioControl
-from .src.communication import *
+from .led_control import LedControl
+from .sfp_monitor import SfpMonitor
+from .motor_control import MotorControl
+from .gpio_control import GpioControl
+from .communication import *
 
-from ..src.constants import BLE_PORT
-from ..src.config_manager import config_manager
+from ...src.constants import BLE_PORT
+from ...src.config_manager import config_manager
 
-from xmlrpc.server import SimpleXMLRPCServer
-from xmlrpc.server import SimpleXMLRPCRequestHandler
 import xmlrpc.client
 
 log = logging.getLogger()
@@ -26,21 +24,21 @@ class Koruza():
 
         self.motor_wrapper = None
         try:
-            self.motor_wrapper = MotorWrapper(serial_handler=self.ser, lock=self.lock)  # open serial and start motor driver wrapper
+            self.motor_wrapper = MotorControl(serial_handler=self.ser, lock=self.lock)  # open serial and start motor driver wrapper
             print("Initialized Motor Wrapper")
         except Exception as e:
             print(f"Failed to init Motor Driver: {e}")
 
         self.led_driver = None
         try:
-            self.led_driver = LedDriver()
+            self.led_driver = LedControl()
             print("Initialized Led Driver")
         except Exception as e:
             print("Failed to init LED Driver")
 
         self.sfp_wrapper = None
         try:
-            self.sfp_wrapper = SfpWrapper()
+            self.sfp_wrapper = SfpMonitor()
             print("Initialized Sfp Wrapper")
         except Exception as e:
             print("Failed to init SFP Wrapper")
@@ -152,20 +150,3 @@ class Koruza():
     def set_distance(distance):
         """Set camera distance"""
         self.status["camera_calibration"]["distance"] = distance
-
-
-# Restrict to a particular path.
-class RequestHandler(SimpleXMLRPCRequestHandler):
-    rpc_paths = ('/RPC2',)
-
-with SimpleXMLRPCServer(('localhost', 8000),
-                        requestHandler=RequestHandler, allow_none=True) as server:
-    server.register_introspection_functions()
-    server.register_instance(Koruza())
-    print('Serving XML-RPC on localhost port 8000')
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\nKeyboard interrupt received, exiting.")
-        # sys.exit(0)
-

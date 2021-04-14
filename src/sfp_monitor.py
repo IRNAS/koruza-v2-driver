@@ -1,20 +1,20 @@
 import time
 import logging
 
-from ..hardware.sfp_driver import Sfp
-from ..hardware.pca9546 import Pca9546
+from ..hardware.sfp import Sfp
+from ..hardware.pca9546a import Pca9546a
 
-Pca9546_address = 0x70
+Pca9546a_address = 0x70
 SFP_CAMERA_line = 0x01
 SFP_OUT_line = 0x02
 
 SFP_CAMERA = 0
 SFP_OUT = 1
 
-class SfpWrapper():
+class SfpMonitor():
     def __init__(self):
         """Init sfp wrapper:
-            - init an instance of the pca9546 switch
+            - init an instance of the Pca9546a switch
             - init an instance of the sfp class
             - we're switching between two sfp's with the same address - one for receiving and one for transmitting data
         """
@@ -36,7 +36,7 @@ class SfpWrapper():
         # diagnostics is rx and tx power and temperature
 
         try:
-            self.switch = Pca9546(Pca9546_address)
+            self.switch = Pca9546a(Pca9546a_address)
         except Exception as e:
             logging.error(e)
 

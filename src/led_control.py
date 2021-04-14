@@ -8,7 +8,7 @@ import RPi.GPIO as GPIO
 # sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
 # sudo python3 -m pip install --force-reinstall adafruit-blinka
 
-class LedDriver():
+class LedControl():
     def __init__(self):
         """
         Class constructor.

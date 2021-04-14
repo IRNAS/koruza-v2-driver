@@ -12,7 +12,7 @@ from ...src.config_manager import config_manager
 log = logging.getLogger()
 SETTINGS_FILE = "./koruza_v2/config.json"  # load settings file on init and write current motor pos and calibration
 
-class MotorWrapper():
+class MotorControl():
     def __init__(self, serial_handler, lock):
         """Initialize motor wrapper"""
         # init global json config manager
@@ -91,6 +91,7 @@ class MotorWrapper():
         if not self.motors_connected:
             self.motors_connected = True
             self.restore_motor(self.position_x, self.position_y, 0)
+            time.sleep(1)
              
         # cleaning files on this
         # response = b"\xf1\x02\x00\x01\x01\x04\x00\x0c\x00\x00'\x10\x00\x00'\x10\x00\x00\x00\x00\t\x00\x08\x00\x00\x00[\xff\xff\xff\xf3\xf2\x03\x00\x04\x86\x80\xbbz\xf2"
