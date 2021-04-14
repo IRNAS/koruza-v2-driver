@@ -22,26 +22,26 @@ class Koruza():
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
 
-        self.motor_wrapper = None
+        self.motor_control = None
         try:
-            self.motor_wrapper = MotorControl(serial_handler=self.ser, lock=self.lock)  # open serial and start motor driver wrapper
-            print("Initialized Motor Wrapper")
+            self.motor_control = MotorControl(serial_handler=self.ser, lock=self.lock)  # open serial and start motor driver wrapper
+            log.info("Initialized Motor Wrapper")
         except Exception as e:
-            print(f"Failed to init Motor Driver: {e}")
+            log.error(f"Failed to init Motor Driver: {e}")
 
         self.led_driver = None
         try:
             self.led_driver = LedControl()
-            print("Initialized Led Driver")
+            log.info("Initialized Led Driver")
         except Exception as e:
-            print("Failed to init LED Driver")
+            log.error("Failed to init LED Driver")
 
         self.sfp_wrapper = None
         try:
             self.sfp_wrapper = SfpMonitor()
-            print("Initialized Sfp Wrapper")
+            log.info("Initialized Sfp Wrapper")
         except Exception as e:
-            print("Failed to init SFP Wrapper")
+            log.error("Failed to init SFP Wrapper")
 
         self.gpio_control = GpioControl()
         self.gpio_control.sfp_config()
@@ -62,7 +62,7 @@ class Koruza():
 
     def get_motors_position(self):
         """Expose getter for motor position"""
-        return self.motor_wrapper.position_x, self.motor_wrapper.position_y
+        return self.motor_control.position_x, self.motor_control.position_y
 
     def set_led_color(self, color, mode):
         """Expose method to set LED color"""
@@ -74,15 +74,15 @@ class Koruza():
 
     def move_motors(self, steps_x, steps_y, steps_z):
         """Expose method to move motors"""
-        self.motor_wrapper.move_motor(steps_x, steps_y, steps_z)
+        self.motor_control.move_motor(steps_x, steps_y, steps_z)
 
     def move_motors_to(self, x, y, z):
         """Expose method to move motors to (x, y, z)"""
-        self.motor_wrapper.move_motor(x, y, z)
+        self.motor_control.move_motor(x, y, z)
 
     def home(self):
         """Expose method for koruza homing"""
-        self.motor_wrapper.home()
+        self.motor_control.home()
 
     def reboot_motor_driver(self):
         """Reboot motor driver."""
