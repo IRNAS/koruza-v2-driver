@@ -9,6 +9,7 @@ from smbus2 import SMBus
 
 from ...src.constants import I2C_CHANNEL
 
+log = logging.getLogger()
 
 class Pca9546a():
     def __init__(self, address):
@@ -19,11 +20,11 @@ class Pca9546a():
             if self.read_config_register() is None:
                 raise ValueError
         except ValueError:
-            logging.error("Pca9546 ERROR: No device found on address {}!".format(hex(address)))
+            log.error("Pca9546 ERROR: No device found on address {}!".format(hex(address)))
             self.i2c_bus = None
         except:
-            logging.error("Bus on channel {} is not available. Error raised by Pca9546.".format(I2C_CHANNEL))
-            logging.info("Available busses are listed as /dev/i2c*")
+            log.error("Bus on channel {} is not available. Error raised by Pca9546.".format(I2C_CHANNEL))
+            log.info("Available busses are listed as /dev/i2c*")
             self.i2c_bus = None
    
     def __del__(self):
@@ -33,17 +34,19 @@ class Pca9546a():
     def read_config_register(self):
         try:
             return self.i2c_bus.read_byte(self.i2c_address)
-        except:
+        except Exception as e:
+            log.error(e)
             return None
 
     def select_channel(self, val=None, ch0=0, ch1=0, ch2=0, ch3=0):
         """
-
+        Set internal register to desired combination of channels.
         """
         if val is None:
             val = ch0 | (ch1<<1) | (ch2<<2) | (ch3<<3)
         try:
             self.i2c_bus.write_byte(self.i2c_address, val)
             return True
-        except:
+        except Exception as e:
+            log.error(e)
             return False
