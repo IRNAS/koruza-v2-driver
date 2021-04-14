@@ -10,7 +10,6 @@ from threading import Thread, Lock
 from ...src.config_manager import config_manager
 
 log = logging.getLogger()
-SETTINGS_FILE = "./koruza_v2/config.json"  # load settings file on init and write current motor pos and calibration
 
 class MotorControl():
     def __init__(self, serial_handler, lock):

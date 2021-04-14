@@ -11,6 +11,7 @@ from .communication import *
 
 from ...src.constants import BLE_PORT
 from ...src.config_manager import config_manager
+from ...src.colors import Color
 
 import xmlrpc.client
 
@@ -22,6 +23,7 @@ class Koruza():
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
 
+        # Init motor control
         self.motor_control = None
         try:
             self.motor_control = MotorControl(serial_handler=self.ser, lock=self.lock)  # open serial and start motor driver wrapper
@@ -29,24 +31,56 @@ class Koruza():
         except Exception as e:
             log.error(f"Failed to init Motor Driver: {e}")
 
-        self.led_driver = None
+        # Init led control
+        self.led_control = None
         try:
-            self.led_driver = LedControl()
+            self.led_control = LedControl()
             log.info("Initialized Led Driver")
         except Exception as e:
-            log.error("Failed to init LED Driver")
+            log.error(f"Failed to init LED Driver: {e}")
 
-        self.sfp_wrapper = None
+        # Init sfp control
+        self.sfp_control = None
         try:
-            self.sfp_wrapper = SfpMonitor()
+            self.sfp_control = SfpMonitor()
             log.info("Initialized Sfp Wrapper")
         except Exception as e:
-            log.error("Failed to init SFP Wrapper")
+            log.error(f"Failed to init SFP Wrapper: {e}")
 
+        # Init sfp GPIO
         self.gpio_control = GpioControl()
         self.gpio_control.sfp_config()
+        self.sfp_data = None  # prepare empty sfp data
 
+        # Init ble driver
         self.ble_driver = None
+
+        self.running = True
+
+        # start loop
+        sfp_diagnostics_loop = Thread(target=self._update_sfp_diagnostics, daemon=True)
+        sfp_diagnostics_loop.start()
+
+    def __del__(self):
+        """Destructor"""
+        self.running = False
+        sfp_diagnostics_loop.join()
+
+    def toggle_led(self):
+        """Toggle led"""
+        self.led_control.toggle_led()
+
+    def get_sfp_diagnostics(self):
+        """Expose sfp getter"""
+        return self.sfp_data
+
+    def _update_sfp_diagnostics(self):
+        """Run in thread to update sfp diagnostics and update LED color"""
+        while self.running:
+            self.sfp_data = self._get_sfp_data()
+            rx_power_dBm = self.sfp_data["sfp_0"]["diagnostics"]["rx_power_dBm"]
+            self.set_led_color(rx_power_dBm)
+            time.sleep(1)  # update once a second
 
     def issue_ble_command(self, command, params):
         """Issue ble command with a new client connection, close connection after call"""
@@ -55,22 +89,38 @@ class Koruza():
             print(f"Issuing ble command {command} with {params}")
             client.send_command(command, params)  
 
-    def get_sfp_data(self):
-        self.sfp_wrapper.update_sfp_diagnostics()
-        sfp_data = self.sfp_wrapper.get_complete_diagnostics()
+    def _get_sfp_data(self):
+        self.sfp_control.update_sfp_diagnostics()
+        sfp_data = self.sfp_control.get_complete_diagnostics()
         return sfp_data
 
     def get_motors_position(self):
         """Expose getter for motor position"""
         return self.motor_control.position_x, self.motor_control.position_y
 
-    def set_led_color(self, color, mode):
+    def set_led_color(self, rx_power):
         """Expose method to set LED color"""
-        self.led_driver.set_color(color, mode)
+        if rx_power >= -40:
+            color = Color.NO_SIGNAL
+        if rx_power >= -38:
+            color = Color.BAD_SIGNAL
+        if rx_power >= -30:
+            color = Color.VERY_WEAK_SIGNAL
+        if rx_power >= -25:
+            color = Color.WEAK_SIGNAL
+        if rx_power >= -20:
+            color = Color.MEDIUM_SIGNAL
+        if rx_power >= -15:
+            color = Color.GOOD_SIGNAL
+        if rx_power >= -10:
+            color = Color.VERY_GOOD_SIGNAL
+        if rx_power >= -5:
+            color = Color.EXCELLENT_SIGNAL
+        self.led_control.set_color(color)
 
     def disable_led(self):
         """Expose method to disable LED"""
-        self.led_driver.turn_off()
+        self.led_control.turn_off()
 
     def move_motors(self, steps_x, steps_y, steps_z):
         """Expose method to move motors"""

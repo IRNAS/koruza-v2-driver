@@ -4,20 +4,39 @@ import logging
 import neopixel
 import RPi.GPIO as GPIO
 
+from ...src.config_manager import config_manager
+from ...src.colors import Color
+
 # to install:
 # sudo pip3 install rpi_ws281x adafruit-circuitpython-neopixel
 # sudo python3 -m pip install --force-reinstall adafruit-blinka
+
+log = logging.getLogger()
 
 class LedControl():
     def __init__(self):
         """
         Class constructor.
         """
-        pin = board.D12  # rgb led is on GPIO 12
-        self.n_pixels = 1
-        # order to GRBW -- it's wrong! setting to GRBW makes it RGBW
-        ORDER = neopixel.GRB
-        self.pixels = neopixel.NeoPixel(pin, self.n_pixels, brightness = 1, auto_write=True)
+        self.config_manager = config_manager
+
+        self.pixels = None
+
+        # init this
+        try:
+            self.init()
+        except Exception as e:
+            log.error(e)
+
+        self.current_color = Color.NO_SIGNAL
+        self.prev_color = Color.NO_SIGNAL
+        self.state = None
+        # toggle led according to config file
+        if self.config_manager.camera["led"]:
+            self.set_color(Color.NO_SIGNAL)  # default is red LED
+            self.turn_on()
+        else:
+            self.turn_off()
 
     
     def __del__(self):
@@ -26,69 +45,51 @@ class LedControl():
         self.mode = 0
         self.pixels[0] = (0,0,0)
         self.pixels.show()
-        # time.sleep(2)
         self.pixels = None
-        # print("DELETING LED DRIVER")
-        # time.sleep(1)
+
+    def init(self):
+        """Init LedControl"""
+        pin = board.D12  # rgb led is on GPIO 12  TODO get from constants
+        # order to GRBW -- it's wrong! setting to GRBW makes it RGBW
+        ORDER = neopixel.GRB
+        self.pixels = neopixel.NeoPixel(pin, 1, brightness = 1, auto_write=True)
+
+    def toggle_led(self):
+        """Toggle led"""
+        if self.state == "OFF":
+            self.set_color(self.prev_color)
+            self.turn_on()
+        elif self.state == "ON":
+            self.set_color(Color.LED_OFF)
+            self.turn_off()
 
     def turn_off(self):
         """Turn LED off"""
-        self.mode = 0
-        self.pixels[0] = (0,0,0)
-        self.pixels.show()
-        # time.sleep(2)
-        # self.pixels = None
-        # time.sleep(1)
+        self.set_color(Color.LED_OFF)
+        self.turn_on()
+        self.state = "OFF"
+        self.config_manager.update_camera_config([("led", False)])
 
-    def set_color(self, color, mode):
+    def turn_on(self):
         """
-        Mode:
-            0: shine
-            105: blink 0.5s
-        """
-        self.mode = mode
 
-        color_split = color[1:]
+        """
+        self.state = "ON"
+        color_split = self.current_color[1:]
         r = int(color_split[0:2], 16)
         g = int(color_split[2:4], 16)
         b = int(color_split[4:6], 16)
 
-        # print(f"R:  {r} G: {g} B: {b}")
-
-        # b = 0
         code = (r, g, b)
-
-        # if color == "blue":
-        #     code = (0,0,255)
-        
         self.pixels[0] = code
-        
-        if self.mode == 0:
-            self.pixels.show()
-        
-        else:
-            while self.mode == 105:
-                self.pixels.show()
-                time.sleep(0.5)
-                self.pixels[0] = (0,0,0)
-                self.pixels.show()
-                time.sleep(0.5)
-                self.pixels[0] = code
-
-    def LED_link_quality(self, rx):
-        """
-        Color scale of RX power. 
-        """
-        pass
-
-    def config_mode(self):
-        """
-        Blink blue in config mode.
-        """
-        self.pixels[0] = (0,0,255)
         self.pixels.show()
-        pass
 
-# if __name__ == "__main__":
-#     led = LedDriver()
-#     led.set_color("blue",105)
+        self.config_manager.update_camera_config([("led", True)])
+
+    def set_color(self, color):
+        """
+        Set led to selected color
+        """
+
+        self.prev_color = self.current_color
+        self.current_color = color
