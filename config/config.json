@@ -1,0 +1,15 @@
+{
+    "calibration": {
+        "offset_x": 284,
+        "offset_y": 384
+    },
+    "camera": {
+        "width": 640,
+        "height": 640,
+        "led": true
+    },
+    "motors": {
+        "last_x": 210,
+        "last_y": -1463
+    }
+}

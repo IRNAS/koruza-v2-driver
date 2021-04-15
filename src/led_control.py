@@ -4,7 +4,6 @@ import logging
 import neopixel
 import RPi.GPIO as GPIO
 
-from ...src.config_manager import config_manager
 from ...src.colors import Color
 
 # to install:
@@ -14,7 +13,7 @@ from ...src.colors import Color
 log = logging.getLogger()
 
 class LedControl():
-    def __init__(self):
+    def __init__(self, config_manager):
         """
         Class constructor.
         """
@@ -32,7 +31,7 @@ class LedControl():
         self.prev_color = Color.NO_SIGNAL
         self.state = None
         # toggle led according to config file
-        if self.config_manager.camera["led"]:
+        if self.config_manager.config["camera"]["led"]:
             self.set_color(Color.NO_SIGNAL)  # default is red LED
             self.turn_on()
         else:

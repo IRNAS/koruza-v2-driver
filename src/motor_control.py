@@ -7,14 +7,12 @@ import json
 from .communication import *
 from threading import Thread, Lock
 
-from ...src.config_manager import config_manager
-
 log = logging.getLogger()
 
 class MotorControl():
-    def __init__(self, serial_handler, lock):
+    def __init__(self, serial_handler, lock, config_manager):
         """Initialize motor wrapper"""
-        
+
         self.config_manager = config_manager
 
         self.ser = None
@@ -23,8 +21,8 @@ class MotorControl():
 
         self.motor_wrapper_running = False
 
-        self.position_x = self.config_manager.motors["last_x"]  # read from json file
-        self.position_y = self.config_manager.motors["last_y"]  # read from json file
+        self.position_x = self.config_manager.config["motors"]["last_x"]  # read from json file
+        self.position_y = self.config_manager.config["motors"]["last_y"]  # read from json file
         self.position_z = None
 
         self.encoder_x = None

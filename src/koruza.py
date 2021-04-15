@@ -9,9 +9,9 @@ from .sfp_monitor import SfpMonitor
 from .motor_control import MotorControl
 from .gpio_control import GpioControl
 from .communication import *
+from .config_manager import ConfigManager
 
 from ...src.constants import BLE_PORT
-from ...src.config_manager import config_manager
 from ...src.colors import Color
 
 import xmlrpc.client
@@ -24,10 +24,13 @@ class Koruza():
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
 
+        # Init config manager
+        self.config_manager = ConfigManager()
+
         # Init motor control
         self.motor_control = None
         try:
-            self.motor_control = MotorControl(serial_handler=self.ser, lock=self.lock)  # open serial and start motor driver wrapper
+            self.motor_control = MotorControl(serial_handler=self.ser, lock=self.lock, config_manager=self.config_manager)  # open serial and start motor driver wrapper
             log.info("Initialized Motor Wrapper")
         except Exception as e:
             log.error(f"Failed to init Motor Driver: {e}")
@@ -35,7 +38,7 @@ class Koruza():
         # Init led control
         self.led_control = None
         try:
-            self.led_control = LedControl()
+            self.led_control = LedControl(config_manager=self.config_manager)
             log.info("Initialized Led Driver")
         except Exception as e:
             log.error(f"Failed to init LED Driver: {e}")
@@ -66,6 +69,22 @@ class Koruza():
         """Destructor"""
         self.running = False
         sfp_diagnostics_loop.join()
+
+    def get_camera_config(self):
+        """Return calibration config"""
+        return self.config_manager.config["camera"]
+
+    def update_camera_config(self, new_config):
+        """Update calibration config with new values"""
+        self.config_manager.update_camera_config(new_config)
+
+    def get_calibration_config(self):
+        """Return calibration config"""
+        return self.config_manager.config["calibration"]
+
+    def update_calibration_config(self, new_calib):
+        """Update calibration config with new values"""
+        self.config_manager.update_calibration_config(new_calib)
 
     def toggle_led(self):
         """Toggle led"""
