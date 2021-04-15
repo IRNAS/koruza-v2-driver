@@ -6,7 +6,7 @@
     "camera": {
         "width": 640,
         "height": 640,
-        "led": true
+        "led": false
     },
     "motors": {
         "last_x": 210,
