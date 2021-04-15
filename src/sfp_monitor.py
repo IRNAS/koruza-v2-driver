@@ -4,6 +4,8 @@ import logging
 from ..hardware.sfp import Sfp
 from ..hardware.pca9546a import Pca9546a
 
+log = logging.getLogger()
+
 Pca9546a_address = 0x70
 SFP_CAMERA_line = 0x01
 SFP_OUT_line = 0x02
@@ -33,63 +35,49 @@ class SfpMonitor():
             }
         }
 
-        # diagnostics is rx and tx power and temperature
-
         try:
             self.switch = Pca9546a(Pca9546a_address)
         except Exception as e:
-            logging.error(e)
+            log.error(f"Error when initializing pca9546a switch: {e}")
 
         try:
             self.init()
         except Exception as e:
-            logging.error(e)
+            log.error(f"Error when initializing sfp drivers: {e}")
 
     def init(self):
         """Initialize wrapper"""
         if self.switch is not None:
-            
-            # print("Initing sfp 0")
-            # initialize sfp_0
             self.switch.select_channel(val=SFP_CAMERA_line)
             try:
                 self.sfp_0 = Sfp()
                 self.data["sfp_0"]["module_info"] = self.sfp_0.get_module_info()
+                log.info("Initialized sfp 0")
             except Exception as e:
-                logging.error(e)
+                log.error(f"Error when initializing sfp 0: {e}")
 
-            # print("Initing sfp 1")
-            # initialize sfp_1
             self.switch.select_channel(val=SFP_OUT_line)
             try:
                 self.sfp_1 = Sfp()
                 self.data["sfp_1"]["module_info"] = self.sfp_1.get_module_info()
+                log.info("Initialized sfp 1")
             except Exception as e:
-                logging.error(e)
-                
-            print(self.data)
+                log.error(f"Error when initializing sfp 1: {e}")
 
     def update_sfp_diagnostics(self):
         """Get data from both sfp's"""
         if self.switch is not None:
-            
-            # print("Getting sfp 0 data")
-            # initialize sfp_0
             self.switch.select_channel(val=SFP_CAMERA_line)
             try:
                 self.data["sfp_0"]["diagnostics"] = self.sfp_0.get_diagnostics()
-                # print(self.data["sfp_0"])
             except Exception as e:
-                logging.error(e)
+                log.error(f"Error when getting sfp 0 diagnostics: {e}")
 
-            # print("Getting sfp 1 data")
-            # initialize sfp_1
             self.switch.select_channel(val=SFP_OUT_line)
             try:
                 self.data["sfp_1"]["diagnostics"] = self.sfp_1.get_diagnostics()
-                # print(self.data["sfp_1"])
             except Exception as e:
-                logging.error(e)
+                log.error(f"Error when getting sfp 1 diagnostics: {e}")
 
     def get_module_info(self, module_select):
         """Return module info of selected module"""

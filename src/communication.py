@@ -6,6 +6,9 @@ import time
 import serial
 import struct
 import binascii
+import logging
+
+log = logging.getLogger()
 
 # MOVE TO CONSTANTS
 MAX_TLV_COUNT = 25
@@ -227,14 +230,18 @@ def message_parse(message):
         offset += (2 + length)
 
         tlv_message = message[start_offset:offset]
-        tlv = parse_tlv(tlv_message)
 
-        if unpacked_tlv_type == TlvType.TLV_CHECKSUM:
-            checksum = message_checksum(message[0:start_offset])  # check checksum on message so far
-            if checksum != tlv.value:
-                return MessageResult.MESSAGE_ERROR_CHECKSUM_MISMATCH, None
+        try:
+            tlv = parse_tlv(tlv_message)
 
-        messages.add_tlv(tlv)
+            if unpacked_tlv_type == TlvType.TLV_CHECKSUM:
+                checksum = message_checksum(message[0:start_offset])  # check checksum on message so far
+                if checksum != tlv.value:
+                    return MessageResult.MESSAGE_ERROR_CHECKSUM_MISMATCH, None
+
+            messages.add_tlv(tlv)
+        except Exception as e:
+            log.error(f"During tlv parsing an exception occured: {e}")
 
     return MessageResult.MESSAGE_SUCCESS, messages  # return value is MessageResult, msg (None if fail)
 

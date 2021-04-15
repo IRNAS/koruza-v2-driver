@@ -14,7 +14,7 @@ log = logging.getLogger()
 class MotorControl():
     def __init__(self, serial_handler, lock):
         """Initialize motor wrapper"""
-        # init global json config manager
+        
         self.config_manager = config_manager
 
         self.ser = None
@@ -47,13 +47,11 @@ class MotorControl():
                 self.ser.close()
                 self.ser = None
         except Exception as e:
-            print(e)
-            pass
+            log.error(f"Error when trying to close serial: {e}")
 
     def motor_status_loop(self):
         """Periodically read motor values"""
         while True:
-            # time.sleep(1)
             if self.motor_loop_running:
                 ret = self.get_motor_status()
                 if ret is None:
@@ -72,7 +70,6 @@ class MotorControl():
         tlv_checksum = create_checksum_tlv(msg)
         msg.add_tlv(tlv_checksum)
         encoded_msg = msg.encode()
-        # print(f"Encoded message: {encoded_msg}")
         frame = build_frame(encoded_msg)
 
         self.lock.acquire()
@@ -80,52 +77,40 @@ class MotorControl():
         try:
             response = read_frame(self.ser)  # read response
             self.lock.release()
-            # print(response)
-            # return True
         except Exception as e:
-            print(e)
+            log.error(f"Error when reading frame: {e}")
             self.lock.release()
             return None  # return None if serial timed out - no motor connected
 
         if not self.motors_connected:
             self.motors_connected = True
             self.restore_motor(self.position_x, self.position_y, 0)
-            time.sleep(1)
-             
-        # cleaning files on this
-        # response = b"\xf1\x02\x00\x01\x01\x04\x00\x0c\x00\x00'\x10\x00\x00'\x10\x00\x00\x00\x00\t\x00\x08\x00\x00\x00[\xff\xff\xff\xf3\xf2\x03\x00\x04\x86\x80\xbbz\xf2"
-        # self.motors_connected = True  # set motors connected if message was received
+            time.sleep(0.5)
         
-        # print(f"Received response: {response}")
         response_clean = clean_frame(response)
-        # print(f"Cleaned response: {response_clean}")
+
+        self.lock.acquire()
         try:
             parsed = message_parse(response_clean)
-            # parse motor position from message
-            # print(f"Num decoded tlvs: {len(parsed[1].tlvs)}")
             if parsed[0] == MessageResult.MESSAGE_SUCCESS:
-                # print(parsed[1])
                 message = parsed[1]
                 for tlv in message.tlvs:
-                    # print(tlv)
-                    # print("new TLV")
                     if tlv.type == TlvType.TLV_MOTOR_POSITION:  # get data from reply
-                        # print("MOTOR POSITION TLV")
                         self.position_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
                         self.position_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
                         self.position_z = bytes_to_int(bytearray(tlv.value[8:12]), signed=True)
 
-                        # update config.json
                         self.config_manager.update_motors_config([("last_x", self.position_x), ("last_y", self.position_y)])
                 
                     if tlv.type == TlvType.TLV_ENCODER_VALUE:  # get data from reply
                         self.encoder_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
                         self.encoder_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
-
+            
+            self.lock.release()
             return True  # return True if success
 
         except Exception as e:
-            print(f"Trouble parsing response: {e}")
+            log.error(f"Error parsing motor response: {e}")
             self.lock.release()  # release lock after completion/failure
             return False  # return False if message received but failed to parse
 
@@ -139,8 +124,9 @@ class MotorControl():
             pos_y = self.position_y
         if self.position_z is not None:
             pos_z = self.position_z
-        # print(f"Restoring motors to: {pos_x}, {pos_y}, {pos_z}")
-        print(f"Restoring motor position!")
+
+        log.info(f"Restoring motor position")
+
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_RESTORE_MOTOR)
         msg.add_tlv(tlv_command)
@@ -150,19 +136,21 @@ class MotorControl():
         msg.add_tlv(checksum)
         encoded_msg = msg.encode()
         frame = build_frame(encoded_msg)
-        print(frame)
 
         self.lock.acquire()
         self.ser.write(frame)  # send message over serial
         self.lock.release()
         return True
         
+
     def move_motor_to(self, x, y, z):
         """Move motor to set position"""
+
         if not self.motors_connected:
             return False
 
-        # received resp
+        log.info("Moving motors to")
+
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
         msg.add_tlv(tlv_command)
@@ -172,12 +160,12 @@ class MotorControl():
         msg.add_tlv(checksum)
         encoded_msg = msg.encode()
         frame = build_frame(encoded_msg)
-        print(frame)
 
         self.lock.acquire()
         self.ser.write(frame)  # send message over serial
         self.lock.release()
         return True
+
 
     def move_motor(self, x, y, z):
         """Move motor relative to current position"""
@@ -185,11 +173,12 @@ class MotorControl():
         if not self.motors_connected:
             return False
 
-        print(f"Moving motors for {x} {y} {z}")
+        log.info("Moving motors")
+
         x = self.position_x + x
         y = self.position_y + y
         z = self.position_z + z
-        # received resp
+
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
         msg.add_tlv(tlv_command)
@@ -199,18 +188,20 @@ class MotorControl():
         msg.add_tlv(checksum)
         encoded_msg = msg.encode()
         frame = build_frame(encoded_msg)
-        print(frame)
 
         self.lock.acquire()
         self.ser.write(frame)  # send message over serial
         self.lock.release()
         return True
 
+
     def home(self):
         """Home to center"""
 
         if not self.motors_connected:
             return False
+
+        log.info("Homing")
 
         msg = Message()
         cmd_home_motor = create_command_tlv(TlvCommand.COMMAND_HOMING)
