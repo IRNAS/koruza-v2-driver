@@ -59,14 +59,13 @@ class LedControl():
             self.set_color(self.prev_color)
             self.turn_on()
         elif self.state == "ON":
-            self.set_color(Color.LED_OFF)
             self.turn_off()
 
     def turn_off(self):
         """Turn LED off"""
-        self.set_color(Color.LED_OFF)
-        self.turn_on()
         self.state = "OFF"
+        self.pixels[0] = (0,0,0)
+        self.pixels.show()
         self.config_manager.update_camera_config([("led", False)])
 
     def turn_on(self):

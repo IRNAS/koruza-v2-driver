@@ -61,6 +61,7 @@ class Koruza():
 
         self.running = True
 
+        time.sleep(1)
         # start loop
         sfp_diagnostics_loop = Thread(target=self._update_sfp_diagnostics, daemon=True)
         sfp_diagnostics_loop.start()

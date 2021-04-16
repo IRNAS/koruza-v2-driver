@@ -6,6 +6,7 @@ from .src.koruza import Koruza
 
 # config loggers
 logging.getLogger("filelock").disabled = True # disable filelock logger
+# logging.getLogger("xmlrpc.server").disabled = True # disable filelock logger
 
 filename = "./koruza_v2/logs/koruza_log.log"
 logging.basicConfig(format='%(asctime)s - %(module)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO)
@@ -22,7 +23,7 @@ if __name__ == "__main__":
         rpc_paths = ('/RPC2',)
 
     with SimpleXMLRPCServer(('localhost', 8000),
-                            requestHandler=RequestHandler, allow_none=True) as server:
+                            requestHandler=RequestHandler, allow_none=True, logRequests=False) as server:
         server.register_introspection_functions()
         server.register_instance(Koruza())
         log.info("Serving XML-RPC on localhost port 8000")

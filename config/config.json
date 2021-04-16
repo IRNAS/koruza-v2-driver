@@ -9,7 +9,7 @@
         "led": false
     },
     "motors": {
-        "last_x": 210,
-        "last_y": -1463
+        "last_x": 0,
+        "last_y": 0
     }
 }
