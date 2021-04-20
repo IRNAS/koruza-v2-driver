@@ -101,9 +101,13 @@ class Koruza():
     def _update_sfp_diagnostics(self):
         """Run in thread to update sfp diagnostics and update LED color"""
         while self.running:
-            self.sfp_data = self._get_sfp_data()
-            rx_power_dBm = self.sfp_data["sfp_0"]["diagnostics"]["rx_power_dBm"]
-            self.set_led_color(rx_power_dBm)
+            # TODO handle properly
+            try:
+                self.sfp_data = self._get_sfp_data()
+                rx_power_dBm = self.sfp_data["sfp_0"]["diagnostics"]["rx_power_dBm"]
+                self.set_led_color(rx_power_dBm)
+            except Exception as e:
+                log.warning(e)
             time.sleep(1)  # update once a second
 
     def issue_remote_command(self, command, params):

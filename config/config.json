@@ -1,7 +1,7 @@
 {
     "calibration": {
-        "offset_x": 290,
-        "offset_y": 534
+        "offset_x": 458,
+        "offset_y": 308
     },
     "camera": {
         "width": 640,
@@ -9,17 +9,17 @@
         "led": false
     },
     "motors": {
-        "last_x": 1813,
-        "last_y": -4000
+        "last_x": 0,
+        "last_y": 0
     },
     "device_mgmt": {
         "ble": {
-            "mode": "master",
-            "address": "xxxxxxxx-0000-1000-8000-00805F9B34FB"
+            "mode": "slave",
+            "other_unit_addr": "xxxxxxxx-0000-1000-8000-00805F9B34FB"
         },
         "wifi": {
-            "mode": "master",
-            "address": "192.168.13.193"
+            "mode": "slave",
+            "other_unit_addr": "192.168.13.193"
         }
     }
 }
