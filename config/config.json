@@ -1,7 +1,7 @@
 {
     "calibration": {
-        "offset_x": 284,
-        "offset_y": 384
+        "offset_x": 290,
+        "offset_y": 534
     },
     "camera": {
         "width": 640,
@@ -9,7 +9,17 @@
         "led": false
     },
     "motors": {
-        "last_x": 0,
-        "last_y": 0
+        "last_x": 1813,
+        "last_y": -4000
+    },
+    "device_mgmt": {
+        "ble": {
+            "mode": "master",
+            "address": "xxxxxxxx-0000-1000-8000-00805F9B34FB"
+        },
+        "wifi": {
+            "mode": "master",
+            "address": "192.168.13.193"
+        }
     }
 }

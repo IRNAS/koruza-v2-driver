@@ -74,6 +74,7 @@ class MotorControl():
         self.ser.write(frame)  # send message over serial
         try:
             response = read_frame(self.ser)  # read response
+            # print(f"Read response: {response}")
             self.lock.release()
         except Exception as e:
             log.error(f"Error when reading frame: {e}")
@@ -93,6 +94,8 @@ class MotorControl():
             if parsed[0] == MessageResult.MESSAGE_SUCCESS:
                 message = parsed[1]
                 for tlv in message.tlvs:
+                    # print(f"Tlv type: {tlv.type}")
+                    # print(f"Tlv value: {tlv.value}")
                     if tlv.type == TlvType.TLV_MOTOR_POSITION:  # get data from reply
                         self.position_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
                         self.position_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)

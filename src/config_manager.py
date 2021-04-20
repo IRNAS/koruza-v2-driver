@@ -17,10 +17,6 @@ class ConfigManager():
 
         self.config = self.load_json_file(CONFIG_FILENAME)
 
-    def get_camera_config(self):
-        """Return updated camera config"""
-        return self.camera
-
     def update_calibration_config(self, key_value_pairs):
         """Update calibration config with given key_value_pairs"""
         print("Updating calibration config")

@@ -11,7 +11,7 @@ from .gpio_control import GpioControl
 from .communication import *
 from .config_manager import ConfigManager
 
-from ...src.constants import BLE_PORT
+from ...src.constants import DEVICE_MANAGEMENT_PORT
 from ...src.colors import Color
 
 import xmlrpc.client
@@ -23,6 +23,9 @@ class Koruza():
         """Initialize koruza.py wrapper with all drivers"""
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
+
+        # Init remote device manager xmlrpc client
+        self.remote_device_manager_client = xmlrpc.client.ServerProxy(f"http://localhost:{DEVICE_MANAGEMENT_PORT}", allow_none=True)
 
         # Init config manager
         self.config_manager = ConfigManager()
@@ -103,12 +106,13 @@ class Koruza():
             self.set_led_color(rx_power_dBm)
             time.sleep(1)  # update once a second
 
-    def issue_ble_command(self, command, params):
-        """Issue ble command with a new client connection, close connection after call"""
-        return  # TODO implement BLE client
-        with xmlrpc.client.ServerProxy(f"http://localhost:{BLE_PORT}", allow_none=True) as client:
-            print(f"Issuing ble command {command} with {params}")
-            client.send_command(command, params)  
+    def issue_remote_command(self, command, params):
+        """Issue RPC call to other unit with a RPC client instance"""
+        print("Issuing remote command from gui refresh")
+        # make synchronous for now, later this will have to be async for it to work!
+        response = self.remote_device_manager_client.request_remote(command, params)
+        print(f"Requested remote done, response: {response}")
+        return response
 
     def _get_sfp_data(self):
         self.sfp_control.update_sfp_diagnostics()
@@ -191,33 +195,33 @@ class Koruza():
         """Power cycle motor driver unit"""
         self.gpio_control.koruza_reset()
 
-    def calibration_forward_transform(self):
-        """Calibration forward transform"""
-        self.status["camera_calibration"]["offset_x"] = self.status["camera_calibration"]["global_offset_x"] - \
-            self.status["camera_calibration"]["zoom_x"] * \
-            self.status["camera_calibration"]["width"] / self.status["camera_calibration"]["zoom_w"]
+    # def calibration_forward_transform(self):
+    #     """Calibration forward transform"""
+    #     self.status["camera_calibration"]["offset_x"] = self.status["camera_calibration"]["global_offset_x"] - \
+    #         self.status["camera_calibration"]["zoom_x"] * \
+    #         self.status["camera_calibration"]["width"] / self.status["camera_calibration"]["zoom_w"]
 
-        self.status["camera_calibration"]["offset_y"] = self.status["camera_calibration"]["global_offset_y"] - \
-            self.status["camera_calibration"]["zoom_y"] * \
-            self.status["camera_calibration"]["height"] / self.status["camera_calibration"]["zoom_h"]
+    #     self.status["camera_calibration"]["offset_y"] = self.status["camera_calibration"]["global_offset_y"] - \
+    #         self.status["camera_calibration"]["zoom_y"] * \
+    #         self.status["camera_calibration"]["height"] / self.status["camera_calibration"]["zoom_h"]
 
-    def calibration_inverse_transform(self):
-        """Calibration inverse transform"""
-        self.status["camera_calibration"]["global_offset_x"] = self.status["camera_calibration"]["offset_x"] * \
-            self.status["camera_calibration"]["zoom_w"] + \
-            self.status["camera_calibration"]["zoom_x"] * self.status["camera_calibration"]["width"]
+    # def calibration_inverse_transform(self):
+    #     """Calibration inverse transform"""
+    #     self.status["camera_calibration"]["global_offset_x"] = self.status["camera_calibration"]["offset_x"] * \
+    #         self.status["camera_calibration"]["zoom_w"] + \
+    #         self.status["camera_calibration"]["zoom_x"] * self.status["camera_calibration"]["width"]
 
-        self.status["camera_calibration"]["global_offset_y"] = self.status["camera_calibration"]["offset_y"] * \
-            self.status["camera_calibration"]["zoom_h"] + \
-            self.status["camera_calibration"]["zoom_y"] * self.status["camera_calibration"]["height"]
+    #     self.status["camera_calibration"]["global_offset_y"] = self.status["camera_calibration"]["offset_y"] * \
+    #         self.status["camera_calibration"]["zoom_h"] + \
+    #         self.status["camera_calibration"]["zoom_y"] * self.status["camera_calibration"]["height"]
 
-    def set_webcam_calibration(self, offset_x, offset_y):
-        # Given offsets are in zoomed-in coordinates, so we need to transform them
-        # to global coordinates based on configured zoom levels.
-        self.status["camera_calibration"]["offset_x"] = offset_x
-        self.status["camera_calibration"]["offset_y"] = offset_y
-        self.koruza_calibration_inverse_transform()
+    # def set_webcam_calibration(self, offset_x, offset_y):
+    #     # Given offsets are in zoomed-in coordinates, so we need to transform them
+    #     # to global coordinates based on configured zoom levels.
+    #     self.status["camera_calibration"]["offset_x"] = offset_x
+    #     self.status["camera_calibration"]["offset_y"] = offset_y
+    #     self.koruza_calibration_inverse_transform()
 
-    def set_distance(distance):
-        """Set camera distance"""
-        self.status["camera_calibration"]["distance"] = distance
+    # def set_distance(distance):
+    #     """Set camera distance"""
+    #     self.status["camera_calibration"]["distance"] = distance
