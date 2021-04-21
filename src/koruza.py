@@ -112,11 +112,15 @@ class Koruza():
 
     def issue_remote_command(self, command, params):
         """Issue RPC call to other unit with a RPC client instance"""
-        print("Issuing remote command from gui refresh")
         # make synchronous for now, later this will have to be async for it to work!
-        response = self.remote_device_manager_client.request_remote(command, params)
-        print(f"Requested remote done, response: {response}")
-        return response
+        try:
+            print("Issuing remote command to second unit")
+            response = self.remote_device_manager_client.request_remote(command, params)
+            print(f"Requested remote done, response: {response}")
+            return response
+        except Exception as e:
+            log.error(f"Failed to get response from remote unit: {e}")
+            return None
 
     def _get_sfp_data(self):
         self.sfp_control.update_sfp_diagnostics()
