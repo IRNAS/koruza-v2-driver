@@ -9,7 +9,7 @@ from .sfp_monitor import SfpMonitor
 from .motor_control import MotorControl
 from .gpio_control import GpioControl
 from .communication import *
-from .config_manager import ConfigManager
+from .data_manager import DataManager
 
 from ...src.constants import DEVICE_MANAGEMENT_PORT
 from ...src.colors import Color
@@ -28,12 +28,12 @@ class Koruza():
         self.remote_device_manager_client = xmlrpc.client.ServerProxy(f"http://localhost:{DEVICE_MANAGEMENT_PORT}", allow_none=True)
 
         # Init config manager
-        self.config_manager = ConfigManager()
+        self.data_manager = DataManager()
 
         # Init motor control
         self.motor_control = None
         try:
-            self.motor_control = MotorControl(serial_handler=self.ser, lock=self.lock, config_manager=self.config_manager)  # open serial and start motor driver wrapper
+            self.motor_control = MotorControl(serial_handler=self.ser, lock=self.lock, data_manager=self.data_manager)  # open serial and start motor driver wrapper
             log.info("Initialized Motor Wrapper")
         except Exception as e:
             log.error(f"Failed to init Motor Driver: {e}")
@@ -41,7 +41,7 @@ class Koruza():
         # Init led control
         self.led_control = None
         try:
-            self.led_control = LedControl(config_manager=self.config_manager)
+            self.led_control = LedControl(data_manager=self.data_manager)
             log.info("Initialized Led Driver")
         except Exception as e:
             log.error(f"Failed to init LED Driver: {e}")
@@ -74,21 +74,21 @@ class Koruza():
         self.running = False
         sfp_diagnostics_loop.join()
 
-    def get_camera_config(self):
-        """Return calibration config"""
-        return self.config_manager.config["camera"]
+    def get_led_data(self):
+        """Return calibration data"""
+        return self.data_manager.data["led"]
 
-    def update_camera_config(self, new_config):
-        """Update calibration config with new values"""
-        self.config_manager.update_camera_config(new_config)
+    def update_led_data(self, new_data):
+        """Update calibration data with new values"""
+        self.data_manager.update_led_data(new_data)
 
-    def get_calibration_config(self):
-        """Return calibration config"""
-        return self.config_manager.config["calibration"]
+    def get_calibration_data(self):
+        """Return calibration data"""
+        return self.data_manager.data["calibration"]
 
-    def update_calibration_config(self, new_calib):
-        """Update calibration config with new values"""
-        self.config_manager.update_calibration_config(new_calib)
+    def update_calibration_data(self, new_data):
+        """Update calibration data with new values"""
+        self.data_manager.update_calibration_data(new_data)
 
     def toggle_led(self):
         """Toggle led"""

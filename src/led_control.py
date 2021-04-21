@@ -13,11 +13,11 @@ from ...src.colors import Color
 log = logging.getLogger()
 
 class LedControl():
-    def __init__(self, config_manager):
+    def __init__(self, data_manager):
         """
         Class constructor.
         """
-        self.config_manager = config_manager
+        self.data_manager = data_manager
 
         self.pixels = None
 
@@ -31,7 +31,7 @@ class LedControl():
         self.prev_color = Color.NO_SIGNAL
         self.state = None
         # toggle led according to config file
-        if self.config_manager.config["camera"]["led"]:
+        if self.data_manager.data["led"]:
             self.set_color(Color.NO_SIGNAL)  # default is red LED
             self.turn_on()
         else:
@@ -66,7 +66,7 @@ class LedControl():
         self.state = "OFF"
         self.pixels[0] = (0,0,0)
         self.pixels.show()
-        self.config_manager.update_camera_config([("led", False)])
+        self.data_manager.update_led_data(False)
 
     def turn_on(self):
         """
@@ -82,7 +82,7 @@ class LedControl():
         self.pixels[0] = code
         self.pixels.show()
 
-        self.config_manager.update_camera_config([("led", True)])
+        self.data_manager.update_led_data(True)
 
     def set_color(self, color):
         """

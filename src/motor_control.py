@@ -10,10 +10,10 @@ from threading import Thread, Lock
 log = logging.getLogger()
 
 class MotorControl():
-    def __init__(self, serial_handler, lock, config_manager):
+    def __init__(self, serial_handler, lock, data_manager):
         """Initialize motor wrapper"""
 
-        self.config_manager = config_manager
+        self.data_manager = data_manager
 
         self.ser = None
         self.ser = serial_handler
@@ -21,8 +21,8 @@ class MotorControl():
 
         self.motor_wrapper_running = False
 
-        self.position_x = self.config_manager.config["motors"]["last_x"]  # read from json file
-        self.position_y = self.config_manager.config["motors"]["last_y"]  # read from json file
+        self.position_x = self.data_manager.data["motors"]["last_x"]  # read from json file
+        self.position_y = self.data_manager.data["motors"]["last_y"]  # read from json file
         self.position_z = None
 
         self.encoder_x = None
@@ -101,7 +101,7 @@ class MotorControl():
                         self.position_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
                         self.position_z = bytes_to_int(bytearray(tlv.value[8:12]), signed=True)
 
-                        self.config_manager.update_motors_config([("last_x", self.position_x), ("last_y", self.position_y)])
+                        self.data_manager.update_motors_data([("last_x", self.position_x), ("last_y", self.position_y)])
                 
                     if tlv.type == TlvType.TLV_ENCODER_VALUE:  # get data from reply
                         self.encoder_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
