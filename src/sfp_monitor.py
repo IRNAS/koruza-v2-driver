@@ -64,20 +64,24 @@ class SfpMonitor():
             except Exception as e:
                 log.error(f"Error when initializing sfp 1: {e}")
 
+            print(self.data)
+
     def update_sfp_diagnostics(self):
         """Get data from both sfp's"""
         if self.switch is not None:
-            self.switch.select_channel(val=SFP_CAMERA_line)
-            try:
-                self.data["sfp_0"]["diagnostics"] = self.sfp_0.get_diagnostics()
-            except Exception as e:
-                log.error(f"Error when getting sfp 0 diagnostics: {e}")
+            if self.sfp_0:
+                self.switch.select_channel(val=SFP_CAMERA_line)
+                try:
+                    self.data["sfp_0"]["diagnostics"] = self.sfp_0.get_diagnostics()
+                except Exception as e:
+                    log.error(f"Error when getting sfp 0 diagnostics: {e}")
 
-            self.switch.select_channel(val=SFP_OUT_line)
-            try:
-                self.data["sfp_1"]["diagnostics"] = self.sfp_1.get_diagnostics()
-            except Exception as e:
-                log.error(f"Error when getting sfp 1 diagnostics: {e}")
+            if self.sfp_1:
+                self.switch.select_channel(val=SFP_OUT_line)
+                try:
+                    self.data["sfp_1"]["diagnostics"] = self.sfp_1.get_diagnostics()
+                except Exception as e:
+                    log.error(f"Error when getting sfp 1 diagnostics: {e}")
 
     def get_module_info(self, module_select):
         """Return module info of selected module"""

@@ -94,8 +94,8 @@ class MotorControl():
             if parsed[0] == MessageResult.MESSAGE_SUCCESS:
                 message = parsed[1]
                 for tlv in message.tlvs:
-                    # print(f"Tlv type: {tlv.type}")
-                    # print(f"Tlv value: {tlv.value}")
+                    print(f"Tlv type: {tlv.type}")
+                    print(f"Tlv value: {tlv.value}")
                     if tlv.type == TlvType.TLV_MOTOR_POSITION:  # get data from reply
                         self.position_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
                         self.position_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
@@ -106,6 +106,8 @@ class MotorControl():
                     if tlv.type == TlvType.TLV_ENCODER_VALUE:  # get data from reply
                         self.encoder_x = bytes_to_int(bytearray(tlv.value[0:4]), signed=True)
                         self.encoder_y = bytes_to_int(bytearray(tlv.value[4:8]), signed=True)
+
+                        print(f"Encoder x: {self.encoder_x}, encoder y: {self.encoder_y}")
             
             self.lock.release()
             return True  # return True if success

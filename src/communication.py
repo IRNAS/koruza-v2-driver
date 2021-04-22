@@ -314,7 +314,10 @@ def clean_frame(frame):
 
     frame_byte_array = bytearray(frame)
     for ind in remove_indices:
-        del frame_byte_array[ind]  # remove from byte array
+        try:
+            del frame_byte_array[ind]  # remove from byte array
+        except Exception as e:
+            log.error(f"Error removing at index {ind}")
 
     frame = bytes(frame_byte_array)
     return frame[start_index+1:end_index - len(remove_indices)]

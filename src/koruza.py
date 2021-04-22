@@ -113,6 +113,7 @@ class Koruza():
     def issue_remote_command(self, command, params):
         """Issue RPC call to other unit with a RPC client instance"""
         # make synchronous for now, later this will have to be async for it to work!
+        
         try:
             print("Issuing remote command to second unit")
             response = self.remote_device_manager_client.request_remote(command, params)
@@ -159,9 +160,9 @@ class Koruza():
         """Expose method to move motors"""
         self.motor_control.move_motor(steps_x, steps_y, steps_z)
 
-    def move_motors_to(self, x, y, z):
+    def move_motors_to(self, x, y):
         """Expose method to move motors to (x, y, z)"""
-        self.motor_control.move_motor(x, y, z)
+        self.motor_control.move_motor_to(x, y, 0)
 
     def home(self):
         """Expose method for koruza homing"""
@@ -202,6 +203,30 @@ class Koruza():
     def hard_reset(self):
         """Power cycle motor driver unit"""
         self.gpio_control.koruza_reset()
+
+    # def snapshot(self):
+    #     try:
+    #         self._camera = picamera.PiCamera()
+    #         self._camera.resolution = self.RESOLUTION
+    #         self._camera.hflip = True
+    #         self._camera.vflip = True
+    #         print("Camera initialised.")
+    #     except picamera.PiCameraError:
+    #         print("ERROR: Failed to initialize camera.")
+
+    #     # Capture snapshot
+    #     with picamera.array.PiRGBArray(self._camera) as output:
+    #         self._camera.capture(output, format='bgr')
+    #         # Store image to ndarray and convert it to grayscale
+    #         frame = cv2.cvtColor(output.array, cv2.COLOR_BGR2GRAY)
+    #         cv2.imwrite(os.path.join(self.CAMERA_STORAGE_PATH,'test-snapshot.jpg'),frame)
+    #         # Crop
+    #         frame = frame[self._crop_y:self._crop_y + 0.4 * self.RESOLUTION[1], self._crop_x:self._crop_x + 0.4 * self.RESOLUTION[0]]
+
+    #     self._camera.close()
+
+    #     return frame
+
 
     # def calibration_forward_transform(self):
     #     """Calibration forward transform"""
