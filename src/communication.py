@@ -301,9 +301,9 @@ def clean_frame(frame):
             remove_indices.append(index-1)
         
         # clean END markers
-        if Marker.END and not prev_char == Marker.ESCAPE:
+        if b == Marker.END and not prev_char == Marker.ESCAPE:
             end_index = index
-        elif Marker.END and prev_char == Marker.ESCAPE:
+        elif b == Marker.END and prev_char == Marker.ESCAPE:
             remove_indices.append(index-1)
 
         # clean ESCAPE markers

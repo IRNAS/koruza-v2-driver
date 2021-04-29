@@ -1,11 +1,11 @@
 {
     "calibration": {
-        "offset_x": 290,
-        "offset_y": 534
+        "offset_x": 280,
+        "offset_y": 528
     },
     "motors": {
-        "last_x": -11995,
-        "last_y": -12800
+        "last_x": 6466,
+        "last_y": -6785
     },
     "led": true
 }

@@ -88,6 +88,7 @@ class LedControl():
         """
         Set led to selected color
         """
-
+        if self.prev_color != color:
+            self.turn_on()
         self.prev_color = self.current_color
         self.current_color = color
