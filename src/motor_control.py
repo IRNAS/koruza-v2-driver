@@ -32,7 +32,7 @@ class MotorControl():
 
         self.motors_connected = False  # set to true when first data is read
 
-
+        time.sleep(1)
         self.restore_motor(self.position_x, self.position_y, 0)  # restore motor on init - restore to previous stored position in koruza.py - restore to 0,0,0 here
         time.sleep(0.5)
 
@@ -56,7 +56,7 @@ class MotorControl():
                     self.motors_connected = False
             else:
                 break
-            time.sleep(0.5)
+            time.sleep(0.2)
 
     # NOTE: this has to run periodically to get last motor position and move accordingly
     def get_motor_status(self):
@@ -69,6 +69,7 @@ class MotorControl():
         msg.add_tlv(tlv_checksum)
         encoded_msg = msg.encode()
         frame = build_frame(encoded_msg)
+
 
         self.lock.acquire()
         self.ser.write(frame)  # send message over serial

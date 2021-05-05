@@ -66,13 +66,13 @@ class Koruza():
 
         time.sleep(1)
         # start loop
-        sfp_diagnostics_loop = Thread(target=self._update_sfp_diagnostics, daemon=True)
-        sfp_diagnostics_loop.start()
+        self.sfp_diagnostics_loop = Thread(target=self._update_sfp_diagnostics, daemon=True)
+        self.sfp_diagnostics_loop.start()
 
     def __del__(self):
         """Destructor"""
         self.running = False
-        sfp_diagnostics_loop.join()
+        self.sfp_diagnostics_loop.join()
 
     def get_led_data(self):
         """Return calibration data"""
@@ -108,7 +108,7 @@ class Koruza():
                 self.set_led_color(rx_power_dBm)
             except Exception as e:
                 log.warning(e)
-            time.sleep(1)  # update once a second
+            time.sleep(0.2)  # update five times
 
     def issue_remote_command(self, command, params):
         """Issue RPC call to other unit with a RPC client instance"""
@@ -156,7 +156,7 @@ class Koruza():
         """Expose method to disable LED"""
         self.led_control.turn_off()
 
-    def move_motors(self, steps_x, steps_y, steps_z):
+    def move_motors(self, steps_x, steps_y, steps_z=0):
         """Expose method to move motors"""
         self.motor_control.move_motor(steps_x, steps_y, steps_z)
 
@@ -178,7 +178,7 @@ class Koruza():
         msg.add_tlv(checksum)
         encoded_msg = msg.encode()
         frame = build_frame(encoded_msg)
-        # print(frame)
+        
 
         self.lock.acquire()
         self.ser.write(frame)  # send message over serial

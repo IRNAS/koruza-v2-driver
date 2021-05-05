@@ -242,6 +242,7 @@ def message_parse(message):
             messages.add_tlv(tlv)
         except Exception as e:
             log.error(f"During tlv parsing an exception occured: {e}")
+            return MessageResult.MESSAGE_ERROR_PARSE_ERROR, None
 
     return MessageResult.MESSAGE_SUCCESS, messages  # return value is MessageResult, msg (None if fail)
 

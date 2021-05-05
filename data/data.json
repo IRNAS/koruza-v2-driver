@@ -4,8 +4,8 @@
         "offset_y": 528
     },
     "motors": {
-        "last_x": 6466,
-        "last_y": -6785
+        "last_x": 0,
+        "last_y": 0
     },
     "led": true
 }
