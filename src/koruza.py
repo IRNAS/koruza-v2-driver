@@ -24,11 +24,17 @@ class Koruza():
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
 
+
         # Init remote device manager xmlrpc client
         self.remote_device_manager_client = xmlrpc.client.ServerProxy(f"http://localhost:{DEVICE_MANAGEMENT_PORT}", allow_none=True)
 
         # Init config manager
         self.data_manager = DataManager()
+
+        # Init sfp GPIO
+        self.gpio_control = GpioControl()
+        self.gpio_control.sfp_config()
+        self.sfp_data = None  # prepare empty sfp data
 
         # Init motor control
         self.motor_control = None
@@ -53,11 +59,6 @@ class Koruza():
             log.info("Initialized Sfp Wrapper")
         except Exception as e:
             log.error(f"Failed to init SFP Wrapper: {e}")
-
-        # Init sfp GPIO
-        self.gpio_control = GpioControl()
-        self.gpio_control.sfp_config()
-        self.sfp_data = None  # prepare empty sfp data
 
         # Init ble driver
         self.ble_driver = None
@@ -115,9 +116,9 @@ class Koruza():
         # make synchronous for now, later this will have to be async for it to work!
         
         try:
-            print("Issuing remote command to second unit")
+            # print("Issuing remote command to second unit")
             response = self.remote_device_manager_client.request_remote(command, params)
-            print(f"Requested remote done, response: {response}")
+            # print(f"Requested remote done, response: {response}")
             return response
         except Exception as e:
             log.error(f"Failed to get response from remote unit: {e}")
