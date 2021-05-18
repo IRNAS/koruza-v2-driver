@@ -25,8 +25,26 @@ Wrappers for above drivers are placed in the `src` folder.
 ### Main Code
 * main: serves `koruza` methods using the XML-RPC protocol. This enables users to write their own UI and other expansion modules if they so desire. 
 
+### Unit data
+Each unit stores local LED state, motor positions and calibration values in a .json file. Before running the code for the first time move the included `data.json` file into the `data` folder.
+
+A The structure of the `data.json` file is as seen below:
+```
+{
+    "calibration": {
+        "offset_x": 280,
+        "offset_y": 528
+    },
+    "motors": {
+        "last_x": -5794,
+        "last_y": 2936
+    },
+    "led": true
+}
+```
+
 ## License
-Firmware and software originating from KORUZA v2 Pro project, including KORUZA v2 Pro Driver, is licensed under [GNU General Public License v3.0](https://github.com/IRNAS/koruza-v2-driver/blob/main/LICENSE).
+Firmware and software originating from KORUZA v2 Pro project, including KORUZA v2 Pro Driver, is licensed under [GNU General Public License v3.0](https://github.com/IRNAS/koruza-v2-driver/blob/master/LICENSE).
 
 Open-source licensing means the hardware, firmware, software and documentation may be used without paying a royalty, and knowing one will be able to use their version forever. One is also free to make changes, but if one shares these changes, they have to do so under the same conditions they are using themselves. KORUZA, KORUZA v2 Pro and IRNAS are all names and marks of IRNAS LTD. These names and terms may only be used to attribute the appropriate entity as required by the Open Licence referred to above. The names and marks may not be used in any other way, and in particular may not be used to imply endorsement or authorization of any hardware one is designing, making or selling.
 
