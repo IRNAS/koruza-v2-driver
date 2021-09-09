@@ -221,41 +221,11 @@ class Koruza():
         s.close()
         VIDEO_STREAM_SRC = f"http://{LOCALHOST}:8080/?action=snapshot"
 
-        # 3 requests tests here, dump text to json, return r.json() and return whole response
-        # 1.)
-        start_time = time.time()
-        print(f"Start taking picture")
         r = requests.get(VIDEO_STREAM_SRC, stream=True)
-        print(f"Duration of taking picture: {time.time() - start_time}")
-        print(r.headers)
-
-        start_time = time.time()
-        img = r.content  # returning this is by faaaar the fastest method, takes 0.2 seconds for whole call
-        print(f"Duration of request to json: {time.time() - start_time}")
-
-        return img
-
-        # 2.)
-        # start_time = time.time()
-        # img = json.dumps(r.text)
-        # if r.status_code == 200:
-        #     pass
-            # for chunk in r:
-            #     print(f"Chunk: {r}")
-        # print(f"Duration of dump text to json: {time.time() - start_time}")
-        # return img
-
-        # img = imageio.imread(VIDEO_STREAM_SRC)
-        start_time = time.time()
-        print(f"Start convert image to list")
-        image = imageio.core.asarray(img).tolist()
-        # NOTE: if return as list duration of encode+send+decode is very huge: ~160 seconds
-        # if we send json string its only ~5 seconds, which is still too long, we want sub 1 second
-        print(f"Duration of convert image to list: {time.time() - start_time}")
-        image = json.dumps(image)
-        # print(image)
-        print(f"Duration from start to return picture: {time.time() - start_time}")
-        return image
+        if r.status_code == 200:
+            return r.content  # returning this is by faaaar the fastest method, takes 0.2 seconds for whole call - check commit #cee4070 for some tests
+        else:
+            return None
 
     def hard_reset(self):
         """Power cycle motor driver unit"""
