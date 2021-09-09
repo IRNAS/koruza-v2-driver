@@ -77,7 +77,7 @@ class Koruza():
 
     def get_led_data(self):
         """Return led data"""
-        return self.data_manager.data["led"]
+        return self.data_manager.get_led_data()
 
     def update_led_data(self, new_data):
         """Update led data with new values"""
@@ -85,7 +85,7 @@ class Koruza():
 
     def get_calibration_data(self):
         """Return calibration data"""
-        return self.data_manager.calibration["calibration"]
+        return self.data_manager.get_calibration().get("calibration", {})
 
     def update_calibration_data(self, new_data):
         """Update calibration data with new values"""

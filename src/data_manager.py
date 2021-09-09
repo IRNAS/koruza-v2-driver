@@ -33,6 +33,13 @@ class DataManager():
                 json.dump(self.calibration, calibration_file, indent=4)
         self.lock.release()
 
+    def get_calibration(self):
+        """Getter for motor data"""
+        self.lock.acquire()
+        calibration = self.calibration
+        self.lock.release()
+        return calibration 
+
     def restore_factory_calibration(self):
         """Restore calibration to factory settings"""
         print("Resetting calibration data")
@@ -62,6 +69,13 @@ class DataManager():
                 json.dump(self.data, data_file, indent=4)
         self.lock.release()
 
+    def get_motor_data(self):
+        """Getter for motor data"""
+        self.lock.acquire()
+        motor_data = self.data["motors"]
+        self.lock.release()
+        return motor_data
+
     def update_led_data(self, value):
         """Update camera data with given key_value_pairs"""
         self.lock.acquire()
@@ -71,6 +85,13 @@ class DataManager():
                 json.dump(self.data, data_file, indent=4)
                 print(f"New led data: {self.data}")
         self.lock.release()
+
+    def get_led_data(self):
+        """Getter for led data"""
+        self.lock.acquire()
+        led_data = self.data["led"]
+        self.lock.release()
+        return led_data
 
     def load_json_file(self, filename):
         """Loads json file"""
