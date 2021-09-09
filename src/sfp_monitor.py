@@ -26,12 +26,12 @@ class SfpMonitor():
 
         self.data = {
             "sfp_0": {
-                "module_info": None,
-                "diagnostics": None
+                "module_info": {},
+                "diagnostics": {}
             },
             "sfp_1": {
-                "module_info": None,
-                "diagnostics": None
+                "module_info": {},
+                "diagnostics": {}
             }
         }
 

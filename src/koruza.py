@@ -34,7 +34,7 @@ class Koruza():
         # Init sfp GPIO
         self.gpio_control = GpioControl()
         self.gpio_control.sfp_config()
-        self.sfp_data = None  # prepare empty sfp data
+        self.sfp_data = {}  # prepare empty sfp data
 
         # Init motor control
         self.motor_control = None
@@ -76,20 +76,24 @@ class Koruza():
         self.sfp_diagnostics_loop.join()
 
     def get_led_data(self):
-        """Return calibration data"""
+        """Return led data"""
         return self.data_manager.data["led"]
 
     def update_led_data(self, new_data):
-        """Update calibration data with new values"""
+        """Update led data with new values"""
         self.data_manager.update_led_data(new_data)
 
     def get_calibration_data(self):
         """Return calibration data"""
-        return self.data_manager.data["calibration"]
+        return self.data_manager.calibration["calibration"]
 
     def update_calibration_data(self, new_data):
         """Update calibration data with new values"""
         self.data_manager.update_calibration_data(new_data)
+
+    def restore_calibration_data(self):
+        """Restore calibration to factory default"""
+        self.data_manager.restore_factory_calibration()
 
     def toggle_led(self):
         """Toggle led"""
@@ -103,12 +107,14 @@ class Koruza():
         """Run in thread to update sfp diagnostics and update LED color"""
         while self.running:
             # TODO handle properly
-            try:
-                self.sfp_data = self._get_sfp_data()
-                rx_power_dBm = self.sfp_data["sfp_0"]["diagnostics"]["rx_power_dBm"]
-                self.set_led_color(rx_power_dBm)
-            except Exception as e:
-                log.warning(e)
+            # try:
+            self.sfp_data = self._get_sfp_data()
+            # print(f"Sfp data: {self.sfp_data}")
+            rx_power_dBm = self.sfp_data.get("sfp_0", {}).get("diagnostics", {}).get("rx_power", -40)
+            # print(f"Rx_power_dbm: {rx_power_dBm}")
+            self.set_led_color(rx_power_dBm)
+            # except Exception as e:
+            #     log.warning(f"An exception occured when updating sfp diagnostics: {e}")
             time.sleep(0.2)  # update five times
 
     def issue_remote_command(self, command, params):
