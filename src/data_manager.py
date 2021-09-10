@@ -20,7 +20,7 @@ class DataManager():
 
         print(f"Saved calibration: {self.calibration}")
 
-    def update_calibration_data(self, key_value_pairs):
+    def update_calibration(self, key_value_pairs):
         """Update calibration data with given key_value_pairs"""
         print("Updating calibration data")
         self.lock.acquire()

@@ -89,15 +89,15 @@ class Koruza():
         """Update led data with new values"""
         self.data_manager.update_led_data(new_data)
 
-    def get_calibration_data(self):
+    def get_calibration(self):
         """Return calibration data"""
         return self.data_manager.get_calibration().get("calibration", {})
 
-    def update_calibration_data(self, new_data):
+    def update_calibration(self, new_data):
         """Update calibration data with new values"""
-        self.data_manager.update_calibration_data(new_data)
+        self.data_manager.update_calibration(new_data)
 
-    def restore_calibration_data(self):
+    def restore_calibration(self):
         """Restore calibration to factory default"""
         self.data_manager.restore_factory_calibration()
 
