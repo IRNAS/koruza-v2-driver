@@ -5,19 +5,11 @@ from random import randrange
 
 from ...hardware.pca9546a import Pca9546a
 
-"""Run tests with sudo python3 -m unittest -v koruza_v2.koruza_v2_driver.test.test_hardware.test_pca9546a"""
-
-'''
-This test class can only test if chip is on given address, no input/output values can be measured - we are only checking if return value types match
-'''
-
-# to get correct voltage measurement we need reference and analog ground voltages
-VREF = 3.3
-VAGND = 0
+"""Run tests with `sudo python3 -m unittest -v koruza_v2.koruza_v2_driver.test.test_hardware.test_pca9546a`"""
 
 class TestPca9546aDriver(unittest.TestCase):
 
-    #This runs once before test methods in this class are run
+    # This runs once before test methods in this class are run
     @classmethod
     def setUpClass(cls):
         cls.driverGood = Pca9546a(0x70)  #use in all funtions
