@@ -1,8 +1,6 @@
 import unittest
 import smbus
 
-from random import randrange
-
 from ...hardware.sfp import Sfp
 
 """

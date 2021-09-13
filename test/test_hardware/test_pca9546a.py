@@ -1,8 +1,6 @@
 import unittest
 import smbus
 
-from random import randrange
-
 from ...hardware.pca9546a import Pca9546a
 
 """Run tests with `sudo python3 -m unittest -v koruza_v2.koruza_v2_driver.test.test_hardware.test_pca9546a`"""
