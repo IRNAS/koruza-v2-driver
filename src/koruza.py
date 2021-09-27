@@ -17,8 +17,9 @@ from .gpio_control import GpioControl
 from .communication import *
 from .data_manager import DataManager
 
-from ...src.constants import DEVICE_MANAGEMENT_PORT
 from ...src.colors import Color
+from ...src.config_manager import get_config
+from ...src.constants import DEVICE_MANAGEMENT_PORT
 
 import xmlrpc.client
 
@@ -27,9 +28,13 @@ log = logging.getLogger()
 class Koruza():
     def __init__(self):
         """Initialize koruza.py wrapper with all drivers"""
+        log.info(f"Initialized koruza main")
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
 
+        # Get device configuration
+        self.config = get_config()
+        log.info(f"Loaded config: {self.config}")
 
         # Init remote device manager xmlrpc client
         self.remote_device_manager_client = xmlrpc.client.ServerProxy(f"http://localhost:{DEVICE_MANAGEMENT_PORT}", allow_none=True)
@@ -81,6 +86,10 @@ class Koruza():
         self.running = False
         self.sfp_diagnostics_loop.join()
 
+    def get_unit_id(self):
+        """Return device id"""
+        return self.config.get("unit_id", "Not Set")
+
     def get_led_data(self):
         """Return led data"""
         return self.data_manager.get_led_data()
@@ -125,7 +134,7 @@ class Koruza():
 
     def issue_remote_command(self, command, params):
         """Issue RPC call to other unit with a RPC client instance"""
-        # make synchronous for now, later this will have to be async for it to work!
+        # make synchronous for now, later this will have to be async for it to work! TODO
         
         try:
             # print("Issuing remote command to second unit")
