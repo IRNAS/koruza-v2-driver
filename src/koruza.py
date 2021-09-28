@@ -1,8 +1,6 @@
 import json
 import serial
 import socket
-import imageio
-import imageio.core
 import logging
 import logging.handlers
 import requests
