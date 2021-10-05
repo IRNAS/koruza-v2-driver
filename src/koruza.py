@@ -88,6 +88,10 @@ class Koruza():
         """Return device id"""
         return self.config.get("unit_id", "Not Set")
 
+    def get_unit_version(self):
+        """Return device software version"""
+        return self.config.get("version", "Not Set")
+
     def get_led_data(self):
         """Return led data"""
         return self.data_manager.get_led_data()
