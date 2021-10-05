@@ -123,7 +123,7 @@ class Koruza():
             # try:
             self.sfp_data = self._get_sfp_data()
             # print(f"Sfp data: {self.sfp_data}")
-            rx_power_dBm = self.sfp_data.get("sfp_0", {}).get("diagnostics", {}).get("rx_power", -40)
+            rx_power_dBm = self.sfp_data.get("sfp_0", {}).get("diagnostics", {}).get("rx_power_dBm", -40)
             # print(f"Rx_power_dbm: {rx_power_dBm}")
             self.set_led_color(rx_power_dBm)
             # except Exception as e:
