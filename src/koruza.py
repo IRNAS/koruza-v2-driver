@@ -2,18 +2,18 @@ import json
 import serial
 import socket
 import logging
-import logging.handlers
 import requests
-import json
+import subprocess
+import logging.handlers
 
 from threading import Thread, Lock
 
+from .communication import *
 from .led_control import LedControl
 from .sfp_monitor import SfpMonitor
-from .motor_control import MotorControl
-from .gpio_control import GpioControl
-from .communication import *
 from .data_manager import DataManager
+from .gpio_control import GpioControl
+from .motor_control import MotorControl
 
 from ...src.colors import Color
 from ...src.config_manager import get_config
@@ -238,28 +238,9 @@ class Koruza():
         """Power cycle motor driver unit"""
         self.gpio_control.koruza_reset()
 
-    # def snapshot(self):
-    #     try:
-    #         self._camera = picamera.PiCamera()
-    #         self._camera.resolution = self.RESOLUTION
-    #         self._camera.hflip = True
-    #         self._camera.vflip = True
-    #         print("Camera initialised.")
-    #     except picamera.PiCameraError:
-    #         print("ERROR: Failed to initialize camera.")
-
-    #     # Capture snapshot
-    #     with picamera.array.PiRGBArray(self._camera) as output:
-    #         self._camera.capture(output, format='bgr')
-    #         # Store image to ndarray and convert it to grayscale
-    #         frame = cv2.cvtColor(output.array, cv2.COLOR_BGR2GRAY)
-    #         cv2.imwrite(os.path.join(self.CAMERA_STORAGE_PATH,'test-snapshot.jpg'),frame)
-    #         # Crop
-    #         frame = frame[self._crop_y:self._crop_y + 0.4 * self.RESOLUTION[1], self._crop_x:self._crop_x + 0.4 * self.RESOLUTION[0]]
-
-    #     self._camera.close()
-
-    #     return frame
+    def update_unit(self):
+        """Call update.sh script to update unit to latest version"""
+        subprocess.call("./koruza_v2/update.sh", shell=True)
 
 
     # def calibration_forward_transform(self):
