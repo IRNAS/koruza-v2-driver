@@ -240,7 +240,21 @@ class Koruza():
 
     def update_unit(self):
         """Call update.sh script to update unit to latest version"""
-        subprocess.call("./koruza_v2/update.sh", shell=True)
+        try:
+            r = requests.get('https://api.github.com/repos/IRNAS/koruza-v2-pro/releases/latest')
+            latest_tag = r.json().get("tag_name", "")
+            if latest_tag == "":
+                return False, ""
+            else:
+                local_tag = self.config.get("version", "")
+                if latest_tag != local_tag:
+                    proc = subprocess.Popen(f"./koruza_v2/update.sh {latest_tag}", stdout=subprocess.PIPE, shell=True)
+                    return True, latest_tag
+                else:
+                    return False, latest_tag
+                
+        except Exception as e:
+            log.error(f"An error occured when trying to update unit: {e}")
 
 
     # def calibration_forward_transform(self):
