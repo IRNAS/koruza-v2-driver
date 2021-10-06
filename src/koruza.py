@@ -16,6 +16,7 @@ from .gpio_control import GpioControl
 from .motor_control import MotorControl
 
 from ...src.colors import Color
+from ...src.camera_settings import *
 from ...src.config_manager import get_config
 from ...src.constants import DEVICE_MANAGEMENT_PORT
 
@@ -259,6 +260,17 @@ class Koruza():
                 
         except Exception as e:
             log.error(f"An error occured when trying to update unit: {e}")
+
+    def update_camera_config(self, zoom_factor):
+        """Update camera config by setting new zoom factor"""
+        # get new values from desired zoom factor
+        x, y, img_p = get_camera_settings(zoom_factor)
+
+        # set new values
+        set_camera_config(x, y, img_p)
+
+        # restart video stream service
+        subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
 
 
     # def calibration_forward_transform(self):
