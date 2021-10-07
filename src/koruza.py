@@ -101,9 +101,17 @@ class Koruza():
         """Update led data with new values"""
         self.data_manager.update_led_data(new_data)
 
+    def get_zoom_data(self):
+        """Return zoom data"""
+        return self.data_manager.get_zoom_data()
+
+    def update_zoom_data(self, new_data):
+        """Update zoom data with new values"""
+        self.data_manager.update_zoom_data(new_data)
+
     def get_calibration(self):
         """Return calibration data"""
-        return self.data_manager.get_calibration().get("calibration", {})
+        return self.data_manager.get_calibration()
 
     def update_calibration(self, new_data):
         """Update calibration data with new values"""
@@ -261,17 +269,19 @@ class Koruza():
         except Exception as e:
             log.error(f"An error occured when trying to update unit: {e}")
 
-    def update_camera_config(self, zoom_factor):
+    def update_camera_config(self, x, y, img_p, zoom_factor=None):
         """Update camera config by setting new zoom factor"""
         # get new values from desired zoom factor
-        x, y, img_p = get_camera_settings(zoom_factor)
-
+        if zoom_factor is not None:
+            x, y, img_p = get_camera_settings(zoom_factor)
         # set new values
         set_camera_config(x, y, img_p)
 
         # restart video stream service
         subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
 
+def clamp(n, smallest, largest): 
+    return max(smallest, min(n, largest))
 
     # def calibration_forward_transform(self):
     #     """Calibration forward transform"""
