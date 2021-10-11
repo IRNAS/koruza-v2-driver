@@ -16,7 +16,7 @@ from .gpio_control import GpioControl
 from .motor_control import MotorControl
 
 from ...src.colors import Color
-from ...src.camera_settings import *
+from ...src.camera_util import *
 from ...src.config_manager import get_config
 from ...src.constants import DEVICE_MANAGEMENT_PORT
 
@@ -70,6 +70,10 @@ class Koruza():
         except Exception as e:
             log.error(f"Failed to init SFP Wrapper: {e}")
 
+        # Set camera settings to configured calibration
+        cam_config = self.get_camera_config()
+        self.update_camera_config(cam_config["X"], cam_config["Y"], cam_config["IMG_P"])
+
         # Init ble driver
         self.ble_driver = None
 
@@ -115,11 +119,15 @@ class Koruza():
 
     def update_calibration(self, new_data):
         """Update calibration data with new values"""
-        self.data_manager.update_calibration(new_data)
+        self.data_manager.update_calibration(new_data)        
 
     def restore_calibration(self):
         """Restore calibration to factory default"""
         self.data_manager.restore_factory_calibration()
+
+    def get_camera_config(self):
+        """Return camera config"""
+        return self.data_manager.get_calibration()["camera_config"]
 
     def toggle_led(self):
         """Toggle led"""
@@ -269,16 +277,48 @@ class Koruza():
         except Exception as e:
             log.error(f"An error occured when trying to update unit: {e}")
 
-    def update_camera_config(self, x, y, img_p, zoom_factor=None):
+    def update_camera_config(self, zoom_factor=None, x=0, y=0, img_p=1):
         """Update camera config by setting new zoom factor"""
         # get new values from desired zoom factor
         if zoom_factor is not None:
-            x, y, img_p = get_camera_settings(zoom_factor)
+            x, y, img_p = calculate_camera_config(zoom_factor)
         # set new values
         set_camera_config(x, y, img_p)
 
         # restart video stream service
         subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
+
+    def update_camera_calib(self):
+        """Update camera_config in calibration.json"""
+
+        cam_config = get_camera_config()
+        self.data_manager.update_camera_config({"X": cam_config["x"], "Y": cam_config["y"], "IMG_P": cam_config["img_p"]})
+
+    def focus_on_marker(self, marker_x, marker_y, img_p, cam_config):
+        """Focus on marker from given params"""
+        # covert to global coordinates
+        global_marker_x = marker_x * img_p + cam_config["X"] * 720
+        global_marker_y = (1.0 - cam_config["Y"]) * 720.0 - (720 - marker_y) * img_p
+        marker_x = round(global_marker_x)
+        marker_y = round(global_marker_y)
+
+        # get new position of top left zoom area based on calculation
+        x, y, clamped_x, clamped_y = calculate_zoom_area_position(marker_x, marker_y, img_p)
+        
+        if img_p != 1.0:
+            marker_x, marker_y = calculate_marker_pos(x, y, img_p)
+
+        # set new values
+        set_camera_config(x, y, img_p)
+
+        # restart video stream service
+        subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
+
+        return marker_x, marker_y
+
+    def restore_camera_calib(self):
+        """Restore camera calib to factory defaults"""
+        pass
 
 def clamp(n, smallest, largest): 
     return max(smallest, min(n, largest))

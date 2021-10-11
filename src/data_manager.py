@@ -22,6 +22,22 @@ class DataManager():
 
         print(f"Saved calibration: {self.calibration}")
 
+    def update_camera_config(self, config_json):
+        """Update camera config"""
+        print(f"Updating camera config data with: {config_json}")
+        self.lock.acquire()
+        try:
+            with FileLock(CALIBRATION_FILENAME + ".lock"):
+                with open(CALIBRATION_FILENAME, "w") as calibration_file:
+                    for key, data in config_json.items():
+                        print(key, data)
+                        self.calibration["camera_config"][key] = data
+                    json.dump(self.calibration, calibration_file, indent=4)
+            print(self.calibration)
+        except Exception as e:
+            print(f"Error: {e}")
+        self.lock.release()
+
     def update_calibration(self, calib_json):
         """Update calibration data with given calib_json"""
         print(f"Updating calibration data with: {calib_json}")
@@ -32,14 +48,14 @@ class DataManager():
                     for key, data in calib_json.items():
                         print(key, data)
                         self.calibration["calibration"][key] = data
-                        print(self.calibration)
                     json.dump(self.calibration, calibration_file, indent=4)
+            print(self.calibration)
         except Exception as e:
             print(f"Error: {e}")
         self.lock.release()
 
     def get_calibration(self):
-        """Getter for motor data"""
+        """Getter for calibration data"""
         self.lock.acquire()
         calibration = self.calibration
         self.lock.release()
@@ -58,6 +74,7 @@ class DataManager():
                 # print(key, data)
                 self.calibration["calibration"]["offset_x"] = default_settings["offset_x"]
                 self.calibration["calibration"]["offset_y"] = default_settings["offset_y"]
+                self.calibration["calibration"]["zoom_level"] = default_settings["zoom_level"]
                 print(self.calibration)
                 json.dump(self.calibration, calibration_file, indent=4)
         self.lock.release()
