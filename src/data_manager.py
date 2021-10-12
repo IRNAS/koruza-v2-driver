@@ -65,16 +65,19 @@ class DataManager():
         """Restore calibration to factory settings"""
         print("Resetting calibration data")
         self.lock.acquire()
-        default_settings = self.load_json_file(FACTORY_DEFAULTS)["calibration"]
+        default_settings = self.load_json_file(FACTORY_DEFAULTS)
 
         print(f"Default settings: {default_settings}")
 
         with FileLock(CALIBRATION_FILENAME + ".lock"):
             with open(CALIBRATION_FILENAME, "w") as calibration_file:
                 # print(key, data)
-                self.calibration["calibration"]["offset_x"] = default_settings["offset_x"]
-                self.calibration["calibration"]["offset_y"] = default_settings["offset_y"]
-                self.calibration["calibration"]["zoom_level"] = default_settings["zoom_level"]
+                self.calibration["calibration"]["offset_x"] = default_settings["calibration"]["offset_x"]
+                self.calibration["calibration"]["offset_y"] = default_settings["calibration"]["offset_y"]
+                self.calibration["calibration"]["zoom_level"] = default_settings["calibration"]["zoom_level"]
+                self.calibration["camera_config"]["X"] = default_settings["camera_config"]["X"]
+                self.calibration["camera_config"]["Y"] = default_settings["camera_config"]["Y"]
+                self.calibration["camera_config"]["IMG_P"] = default_settings["camera_config"]["IMG_P"]
                 print(self.calibration)
                 json.dump(self.calibration, calibration_file, indent=4)
         self.lock.release()

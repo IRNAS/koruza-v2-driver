@@ -309,7 +309,7 @@ class Koruza():
             marker_x, marker_y = calculate_marker_pos(x, y, img_p)
 
         # set new values
-        set_camera_config(x, y, img_p)
+        set_camera_config(clamped_x, clamped_y, img_p)
 
         # restart video stream service
         subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
