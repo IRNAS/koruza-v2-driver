@@ -94,10 +94,3 @@ class SfpMonitor():
     def get_complete_diagnostics(self):
         """Return both sets of diagnostics"""
         return self.data
-
-# wrapper = SfpWrapper()
-# for i in range(0, 100):
-#     time.sleep(1)
-#     wrapper.update_sfp_diagnostics()
-#     print(f"Getting module 0 diagnostics: {wrapper.get_module_diagnostics(0)}")
-#     print(f"Getting module 1 diagnostics: {wrapper.get_module_diagnostics(1)}")

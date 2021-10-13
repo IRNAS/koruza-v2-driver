@@ -3,3 +3,5 @@ src/__pycache__/*
 hardware/__pycache__/*
 data/data.json.lock
 data/data.json
+test/test_hardware/__pycache__
+test/test_integration/__pycache__

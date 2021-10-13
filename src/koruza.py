@@ -1,18 +1,24 @@
-import serial
-import logging
-import logging.handlers
 import json
+import serial
+import socket
+import logging
+import requests
+import subprocess
+import logging.handlers
+
 from threading import Thread, Lock
 
+from .communication import *
 from .led_control import LedControl
 from .sfp_monitor import SfpMonitor
-from .motor_control import MotorControl
-from .gpio_control import GpioControl
-from .communication import *
 from .data_manager import DataManager
+from .gpio_control import GpioControl
+from .motor_control import MotorControl
 
-from ...src.constants import DEVICE_MANAGEMENT_PORT
 from ...src.colors import Color
+from ...src.camera_util import *
+from ...src.config_manager import get_config
+from ...src.constants import DEVICE_MANAGEMENT_PORT
 
 import xmlrpc.client
 
@@ -21,9 +27,13 @@ log = logging.getLogger()
 class Koruza():
     def __init__(self):
         """Initialize koruza.py wrapper with all drivers"""
+        log.info(f"Initialized koruza main")
         self.ser = serial.Serial("/dev/ttyAMA0", baudrate=115200, timeout=2)
         self.lock = Lock()
 
+        # Get device configuration
+        self.config = get_config()
+        log.info(f"Loaded config: {self.config}")
 
         # Init remote device manager xmlrpc client
         self.remote_device_manager_client = xmlrpc.client.ServerProxy(f"http://localhost:{DEVICE_MANAGEMENT_PORT}", allow_none=True)
@@ -60,6 +70,10 @@ class Koruza():
         except Exception as e:
             log.error(f"Failed to init SFP Wrapper: {e}")
 
+        # Set camera settings to configured calibration
+        cam_config = self.get_camera_config()
+        self.update_camera_config(cam_config["X"], cam_config["Y"], cam_config["IMG_P"])
+
         # Init ble driver
         self.ble_driver = None
 
@@ -75,25 +89,45 @@ class Koruza():
         self.running = False
         self.sfp_diagnostics_loop.join()
 
+    def get_unit_id(self):
+        """Return device id"""
+        return self.config.get("unit_id", "Not Set")
+
+    def get_unit_version(self):
+        """Return device software version"""
+        return self.config.get("version", "Not Set")
+
     def get_led_data(self):
         """Return led data"""
-        return self.data_manager.data["led"]
+        return self.data_manager.get_led_data()
 
     def update_led_data(self, new_data):
         """Update led data with new values"""
         self.data_manager.update_led_data(new_data)
 
-    def get_calibration_data(self):
+    def get_zoom_data(self):
+        """Return zoom data"""
+        return self.data_manager.get_zoom_data()
+
+    def update_zoom_data(self, new_data):
+        """Update zoom data with new values"""
+        self.data_manager.update_zoom_data(new_data)
+
+    def get_calibration(self):
         """Return calibration data"""
-        return self.data_manager.calibration["calibration"]
+        return self.data_manager.get_calibration()
 
-    def update_calibration_data(self, new_data):
+    def update_calibration(self, new_data):
         """Update calibration data with new values"""
-        self.data_manager.update_calibration_data(new_data)
+        self.data_manager.update_calibration(new_data)        
 
-    def restore_calibration_data(self):
+    def restore_calibration(self):
         """Restore calibration to factory default"""
         self.data_manager.restore_factory_calibration()
+
+    def get_camera_config(self):
+        """Return camera config"""
+        return self.data_manager.get_calibration()["camera_config"]
 
     def toggle_led(self):
         """Toggle led"""
@@ -110,7 +144,7 @@ class Koruza():
             # try:
             self.sfp_data = self._get_sfp_data()
             # print(f"Sfp data: {self.sfp_data}")
-            rx_power_dBm = self.sfp_data.get("sfp_0", {}).get("diagnostics", {}).get("rx_power", -40)
+            rx_power_dBm = self.sfp_data.get("sfp_0", {}).get("diagnostics", {}).get("rx_power_dBm", -40)
             # print(f"Rx_power_dbm: {rx_power_dBm}")
             self.set_led_color(rx_power_dBm)
             # except Exception as e:
@@ -119,7 +153,7 @@ class Koruza():
 
     def issue_remote_command(self, command, params):
         """Issue RPC call to other unit with a RPC client instance"""
-        # make synchronous for now, later this will have to be async for it to work!
+        # make synchronous for now, later this will have to be async for it to work! TODO
         
         try:
             # print("Issuing remote command to second unit")
@@ -207,33 +241,87 @@ class Koruza():
         self.lock.release()
         return True
 
+    def take_picture(self):
+        """Take picture and return int array"""
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        LOCALHOST = s.getsockname()[0]
+        s.close()
+        VIDEO_STREAM_SRC = f"http://{LOCALHOST}:8080/?action=snapshot"
+
+        r = requests.get(VIDEO_STREAM_SRC, stream=True)
+        if r.status_code == 200:
+            return r.content  # returning this is by faaaar the fastest method, takes 0.2 seconds for whole call - check commit #cee4070 for some tests
+        else:
+            return None
+
     def hard_reset(self):
         """Power cycle motor driver unit"""
         self.gpio_control.koruza_reset()
 
-    # def snapshot(self):
-    #     try:
-    #         self._camera = picamera.PiCamera()
-    #         self._camera.resolution = self.RESOLUTION
-    #         self._camera.hflip = True
-    #         self._camera.vflip = True
-    #         print("Camera initialised.")
-    #     except picamera.PiCameraError:
-    #         print("ERROR: Failed to initialize camera.")
+    def update_unit(self):
+        """Call update.sh script to update unit to latest version"""
+        try:
+            r = requests.get('https://api.github.com/repos/IRNAS/koruza-v2-pro/releases/latest')
+            latest_tag = r.json().get("tag_name", "")
+            if latest_tag == "":
+                return False, ""
+            else:
+                local_tag = self.config.get("version", "")
+                if latest_tag != local_tag:
+                    proc = subprocess.Popen(f"./koruza_v2/update.sh {latest_tag}", stdout=subprocess.PIPE, shell=True)
+                    return True, latest_tag
+                else:
+                    return False, latest_tag
+                
+        except Exception as e:
+            log.error(f"An error occured when trying to update unit: {e}")
 
-    #     # Capture snapshot
-    #     with picamera.array.PiRGBArray(self._camera) as output:
-    #         self._camera.capture(output, format='bgr')
-    #         # Store image to ndarray and convert it to grayscale
-    #         frame = cv2.cvtColor(output.array, cv2.COLOR_BGR2GRAY)
-    #         cv2.imwrite(os.path.join(self.CAMERA_STORAGE_PATH,'test-snapshot.jpg'),frame)
-    #         # Crop
-    #         frame = frame[self._crop_y:self._crop_y + 0.4 * self.RESOLUTION[1], self._crop_x:self._crop_x + 0.4 * self.RESOLUTION[0]]
+    def update_camera_config(self, zoom_factor=None, x=0, y=0, img_p=1):
+        """Update camera config by setting new zoom factor"""
+        # get new values from desired zoom factor
+        if zoom_factor is not None:
+            x, y, img_p = calculate_camera_config(zoom_factor)
+        # set new values
+        set_camera_config(x, y, img_p)
 
-    #     self._camera.close()
+        # restart video stream service
+        subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
 
-    #     return frame
+    def update_camera_calib(self):
+        """Update camera_config in calibration.json"""
 
+        cam_config = get_camera_config()
+        self.data_manager.update_camera_config({"X": cam_config["x"], "Y": cam_config["y"], "IMG_P": cam_config["img_p"]})
+
+    def focus_on_marker(self, marker_x, marker_y, img_p, cam_config):
+        """Focus on marker from given params"""
+        # covert to global coordinates
+        global_marker_x = marker_x * img_p + cam_config["X"] * 720
+        global_marker_y = (1.0 - cam_config["Y"]) * 720.0 - (720 - marker_y) * img_p
+        marker_x = round(global_marker_x)
+        marker_y = round(global_marker_y)
+
+        # get new position of top left zoom area based on calculation
+        x, y, clamped_x, clamped_y = calculate_zoom_area_position(marker_x, marker_y, img_p)
+        
+        if img_p != 1.0:
+            marker_x, marker_y = calculate_marker_pos(x, y, img_p)
+
+        # set new values
+        set_camera_config(clamped_x, clamped_y, img_p)
+
+        # restart video stream service
+        subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
+
+        return marker_x, marker_y
+
+    def restore_camera_calib(self):
+        """Restore camera calib to factory defaults"""
+        pass
+
+def clamp(n, smallest, largest): 
+    return max(smallest, min(n, largest))
 
     # def calibration_forward_transform(self):
     #     """Calibration forward transform"""

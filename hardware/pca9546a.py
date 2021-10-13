@@ -35,18 +35,43 @@ class Pca9546a():
         try:
             return self.i2c_bus.read_byte(self.i2c_address)
         except Exception as e:
-            log.error(e)
+            log.error(f"An exception occured when trying to read config register: {e}")
             return None
 
     def select_channel(self, val=None, ch0=0, ch1=0, ch2=0, ch3=0):
         """
         Set internal register to desired combination of channels.
         """
+
+        if type(val) is not int:
+            log.error(f"Input value must be an integer!")
+            return False
+
+        if val < 0 or val > 15:
+            log.error(f"Specified channel configuration must be between 0000 (0 dec) and 1111 (15 dec)")
+            return False
+
+        if ch0 < 0 or ch0 > 1:
+            log.error(f"Channel 0 must be set to either 0 or 1")
+            return False
+
+        if ch1 < 0 or ch1 > 1:
+            log.error(f"Channel 1 must be set to either 0 or 1")
+            return False
+        
+        if ch2 < 0 or ch2 > 1:
+            log.error(f"Channel 2 must be set to either 0 or 1")
+            return False
+
+        if ch3 < 0 or ch3 > 1:
+            log.error(f"Channel 3 must be set to either 0 or 1")
+            return False
+
         if val is None:
             val = ch0 | (ch1<<1) | (ch2<<2) | (ch3<<3)
         try:
             self.i2c_bus.write_byte(self.i2c_address, val)
             return True
         except Exception as e:
-            log.error(e)
+            log.error(f"An exception occured when trying to write config register: {e}")
             return False

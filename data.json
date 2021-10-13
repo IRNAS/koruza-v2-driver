@@ -1,11 +1,8 @@
 {
-    "calibration": {
-        "offset_x": 0,
-        "offset_y": 0
-    },
     "motors": {
         "last_x": 0,
         "last_y": 0
     },
-    "led": true
+    "led": true,
+    "zoom": false
 }

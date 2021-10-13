@@ -66,8 +66,8 @@ class Sfp():
             self.init()
         except Exception as e:
             log.error("An error occured during sfp initializion!")
-            raise Exception(e)
             self.i2c_bus = None
+            raise Exception(e)
    
     def __del__(self):
         """Driver destructor."""
