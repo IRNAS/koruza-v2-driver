@@ -39,7 +39,8 @@ A The structure of the `data.json` file is as seen below:
         "last_x": -5794,
         "last_y": 2936
     },
-    "led": true
+    "led": true,
+    "zoom": true
 }
 ```
 ## Dependencies and older versions
