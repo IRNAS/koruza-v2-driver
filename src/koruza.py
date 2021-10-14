@@ -17,7 +17,7 @@ from .motor_control import MotorControl
 
 from ...src.colors import Color
 from ...src.camera_util import *
-from ...src.config_manager import get_config
+from ...src.config_manager import get_config, set_config
 from ...src.constants import DEVICE_MANAGEMENT_PORT
 
 import xmlrpc.client
@@ -262,14 +262,16 @@ class Koruza():
     def update_unit(self):
         """Call update.sh script to update unit to latest version"""
         try:
-            r = requests.get('https://api.github.com/repos/IRNAS/koruza-v2-pro/releases/latest')
-            latest_tag = r.json().get("tag_name", "")
+            r = requests.get('https://api.github.com/repos/IRNAS/koruza-v2-pro/releases')
+            latest_release = r.json()[0]  # first element of list is the first release
+            latest_tag = latest_release.get("tag_name", "")
             if latest_tag == "":
                 return False, ""
             else:
                 local_tag = self.config.get("version", "")
                 if latest_tag != local_tag:
                     proc = subprocess.Popen(f"./koruza_v2/update.sh {latest_tag}", stdout=subprocess.PIPE, shell=True)
+                    set_config("version", latest_tag)
                     return True, latest_tag
                 else:
                     return False, latest_tag
