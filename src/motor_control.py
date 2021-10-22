@@ -219,3 +219,7 @@ class MotorControl():
         self.ser.write(frame)  # send message over serial
         self.lock.release()
         return True
+
+    def get_motors_connected(self):
+        """Return motor status"""
+        return self.motors_connected

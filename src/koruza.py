@@ -148,6 +148,10 @@ class Koruza():
         """Expose sfp getter"""
         return self.sfp_data
 
+    def get_motor_status(self):
+        """Return status of motor"""
+        return self.motor_control.get_motors_connected()
+
     def _update_sfp_diagnostics(self):
         """Run in thread to update sfp diagnostics and update LED color"""
         while self.running:
