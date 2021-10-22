@@ -117,6 +117,9 @@ class Koruza():
         """Return calibration data"""
         return self.data_manager.get_calibration()
 
+    def get_current_calibration(self):
+        return self.data_manager.get_current_calibration()
+
     def update_calibration(self, new_data):
         """Update calibration data with new values"""
         self.data_manager.update_calibration(new_data)
@@ -132,6 +135,10 @@ class Koruza():
     def get_camera_config(self):
         """Return camera config"""
         return self.data_manager.get_calibration()["camera_config"]
+
+    def get_current_camera_config(self):
+        """Return camera config"""
+        return self.data_manager.get_current_calibration()["camera_config"]
 
     def toggle_led(self):
         """Toggle led"""
@@ -294,11 +301,12 @@ class Koruza():
         # restart video stream service
         subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
 
-    def update_camera_calib(self):
+    def update_camera_calib(self, cam_config=None):
         """Update camera_config in calibration.json"""
-
-        cam_config = get_camera_config()
+        if cam_config is None:
+            cam_config = get_camera_config()
         self.data_manager.update_camera_config({"X": cam_config["x"], "Y": cam_config["y"], "IMG_P": cam_config["img_p"]})
+
 
     def update_current_camera_calib(self):
         cam_config = get_camera_config()
@@ -325,10 +333,6 @@ class Koruza():
         subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
 
         return marker_x, marker_y
-
-    def restore_camera_calib(self):
-        """Restore camera calib to factory defaults"""
-        pass
 
 def clamp(n, smallest, largest): 
     return max(smallest, min(n, largest))

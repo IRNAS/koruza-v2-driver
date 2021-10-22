@@ -3,6 +3,7 @@ Updates local data - used to sync data between modules
 """
 
 import json
+from pathlib import Path
 from threading import Lock
 from filelock import FileLock
 
@@ -28,9 +29,12 @@ class DataManager():
 
     def create_temp_file(self):
         with open(CALIBRATION_FILENAME, "r") as out_file:
-            with open(CURRENT_CALIBRATION_FILENAME, "w+") as in_file:
-                for line in out_file:
-                    in_file.write(line)
+            file_exists = Path(CURRENT_CALIBRATION_FILENAME).is_file()
+            print(f"File exists: {file_exists}")
+            if not file_exists:
+                with open(CURRENT_CALIBRATION_FILENAME, "w+") as in_file:
+                    for line in out_file:
+                        in_file.write(line)
 
     def update_current_calibration(self, calib_json):
         """Update calibration data with given calib_json"""
@@ -41,9 +45,9 @@ class DataManager():
                 with open(CURRENT_CALIBRATION_FILENAME, "w") as calibration_file:
                     for key, data in calib_json.items():
                         print(key, data)
-                        self.calibration["calibration"][key] = data
-                    json.dump(self.calibration, calibration_file, indent=4)
-            print(self.calibration)
+                        self.current_calibration["calibration"][key] = data
+                    json.dump(self.current_calibration, calibration_file, indent=4)
+            print(self.current_calibration)
         except Exception as e:
             print(f"Error: {e}")
         self.lock.release()
@@ -57,9 +61,9 @@ class DataManager():
                 with open(CURRENT_CALIBRATION_FILENAME, "w") as calibration_file:
                     for key, data in config_json.items():
                         print(key, data)
-                        self.calibration["camera_config"][key] = data
-                    json.dump(self.calibration, calibration_file, indent=4)
-            print(self.calibration)
+                        self.current_calibration["camera_config"][key] = data
+                    json.dump(self.current_calibration, calibration_file, indent=4)
+            print(self.current_calibration)
         except Exception as e:
             print(f"Error: {e}")
         self.lock.release()
@@ -100,9 +104,14 @@ class DataManager():
         """Getter for calibration data"""
         self.lock.acquire()
         calibration = self.calibration
-        print(f"Returning calibration from data manager: {calibration}")
         self.lock.release()
         return calibration 
+
+    def get_current_calibration(self):
+        self.lock.acquire()
+        calib = self.current_calibration
+        self.lock.release()
+        return calib
 
     def restore_factory_calibration(self):
         """Restore calibration to factory settings"""
@@ -111,18 +120,17 @@ class DataManager():
         default_settings = self.load_json_file(FACTORY_DEFAULTS)
 
         print(f"Default settings: {default_settings}")
-
-        with FileLock(CALIBRATION_FILENAME + ".lock"):
-            with open(CALIBRATION_FILENAME, "w") as calibration_file:
+        with FileLock(CURRENT_CALIBRATION_FILENAME + ".lock"):
+            with open(CURRENT_CALIBRATION_FILENAME, "w") as calibration_file:
                 # print(key, data)
-                self.calibration["calibration"]["offset_x"] = default_settings["calibration"]["offset_x"]
-                self.calibration["calibration"]["offset_y"] = default_settings["calibration"]["offset_y"]
-                self.calibration["calibration"]["zoom_level"] = default_settings["calibration"]["zoom_level"]
-                self.calibration["camera_config"]["X"] = default_settings["camera_config"]["X"]
-                self.calibration["camera_config"]["Y"] = default_settings["camera_config"]["Y"]
-                self.calibration["camera_config"]["IMG_P"] = default_settings["camera_config"]["IMG_P"]
-                print(self.calibration)
-                json.dump(self.calibration, calibration_file, indent=4)
+                self.current_calibration["calibration"]["offset_x"] = default_settings["calibration"]["offset_x"]
+                self.current_calibration["calibration"]["offset_y"] = default_settings["calibration"]["offset_y"]
+                self.current_calibration["calibration"]["zoom_level"] = default_settings["calibration"]["zoom_level"]
+                self.current_calibration["camera_config"]["X"] = default_settings["camera_config"]["X"]
+                self.current_calibration["camera_config"]["Y"] = default_settings["camera_config"]["Y"]
+                self.current_calibration["camera_config"]["IMG_P"] = default_settings["camera_config"]["IMG_P"]
+                print(self.current_calibration)
+                json.dump(self.current_calibration, calibration_file, indent=4)
         self.lock.release()
 
     def update_motors_data(self, key_value_pairs):
