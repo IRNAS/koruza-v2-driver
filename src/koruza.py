@@ -119,7 +119,11 @@ class Koruza():
 
     def update_calibration(self, new_data):
         """Update calibration data with new values"""
-        self.data_manager.update_calibration(new_data)        
+        self.data_manager.update_calibration(new_data)
+
+    def update_current_calibration(self, new_data):
+        """Update calibration data with new values"""
+        self.data_manager.update_current_calibration(new_data)
 
     def restore_calibration(self):
         """Restore calibration to factory default"""
@@ -295,6 +299,10 @@ class Koruza():
 
         cam_config = get_camera_config()
         self.data_manager.update_camera_config({"X": cam_config["x"], "Y": cam_config["y"], "IMG_P": cam_config["img_p"]})
+
+    def update_current_camera_calib(self):
+        cam_config = get_camera_config()
+        self.data_manager.update_current_camera_config({"X": cam_config["x"], "Y": cam_config["y"], "IMG_P": cam_config["img_p"]})
 
     def focus_on_marker(self, marker_x, marker_y, img_p, cam_config):
         """Focus on marker from given params"""

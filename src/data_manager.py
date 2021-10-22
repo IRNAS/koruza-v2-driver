@@ -9,6 +9,7 @@ from filelock import FileLock
 DATA_FILENAME = "./koruza_v2/koruza_v2_driver/data/data.json"
 CALIBRATION_FILENAME = "./koruza_v2/config/calibration.json"
 FACTORY_DEFAULTS = "./koruza_v2/config/factory_defaults.json"  # file is write protected, login as root and use # chattr +i factory_defaults.json, to restore us chattr -i factory_defaults.json
+CURRENT_CALIBRATION_FILENAME = "./koruza_v2/config/current_calibration.json"
 
 class DataManager():
     def __init__(self):
@@ -21,6 +22,47 @@ class DataManager():
         self.calibration = self.load_json_file(CALIBRATION_FILENAME)
 
         print(f"Saved calibration: {self.calibration}")
+
+        self.create_temp_file()
+        self.current_calibration = self.load_json_file(CURRENT_CALIBRATION_FILENAME)
+
+    def create_temp_file(self):
+        with open(CALIBRATION_FILENAME, "r") as out_file:
+            with open(CURRENT_CALIBRATION_FILENAME, "w+") as in_file:
+                for line in out_file:
+                    in_file.write(line)
+
+    def update_current_calibration(self, calib_json):
+        """Update calibration data with given calib_json"""
+        print(f"Updating calibration data with: {calib_json}")
+        self.lock.acquire()
+        try:
+            with FileLock(CURRENT_CALIBRATION_FILENAME + ".lock"):
+                with open(CURRENT_CALIBRATION_FILENAME, "w") as calibration_file:
+                    for key, data in calib_json.items():
+                        print(key, data)
+                        self.calibration["calibration"][key] = data
+                    json.dump(self.calibration, calibration_file, indent=4)
+            print(self.calibration)
+        except Exception as e:
+            print(f"Error: {e}")
+        self.lock.release()
+
+    def update_current_camera_config(self, config_json):
+        """Update camera config"""
+        print(f"Updating camera config data with: {config_json}")
+        self.lock.acquire()
+        try:
+            with FileLock(CURRENT_CALIBRATION_FILENAME + ".lock"):
+                with open(CURRENT_CALIBRATION_FILENAME, "w") as calibration_file:
+                    for key, data in config_json.items():
+                        print(key, data)
+                        self.calibration["camera_config"][key] = data
+                    json.dump(self.calibration, calibration_file, indent=4)
+            print(self.calibration)
+        except Exception as e:
+            print(f"Error: {e}")
+        self.lock.release()
 
     def update_camera_config(self, config_json):
         """Update camera config"""
@@ -58,6 +100,7 @@ class DataManager():
         """Getter for calibration data"""
         self.lock.acquire()
         calibration = self.calibration
+        print(f"Returning calibration from data manager: {calibration}")
         self.lock.release()
         return calibration 
 
