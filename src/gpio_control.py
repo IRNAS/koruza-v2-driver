@@ -11,6 +11,12 @@ class GpioControl():
         """Init class and configure pin mode"""
         GPIO.setmode(GPIO.BCM)  # set BCM mode
 
+        GPIO.setup(10, GPIO.OUT)
+        GPIO.setup(11, GPIO.OUT)
+        print(f"Setting pin 11 and 10 high")
+        GPIO.output(10, GPIO.HIGH)
+        GPIO.output(11, GPIO.HIGH)
+
     def koruza_reset(self):
         """Hardware resets MCU (motor driver)"""
         GPIO.setup(RESET, GPIO.OUT)  # set pin as output
