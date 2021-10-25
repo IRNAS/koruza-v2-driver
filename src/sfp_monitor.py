@@ -13,6 +13,8 @@ SFP_OUT_line = 0x02
 SFP_CAMERA = 0
 SFP_OUT = 1
 
+RE_INIT_INTERVAL = 60  # try to re-initialize sfps in a 60 seconds interval
+
 class SfpMonitor():
     def __init__(self):
         """Init sfp wrapper:
@@ -35,6 +37,8 @@ class SfpMonitor():
             }
         }
 
+        self.init_timestamp = time.time()
+
         try:
             self.switch = Pca9546a(Pca9546a_address)
         except Exception as e:
@@ -48,12 +52,14 @@ class SfpMonitor():
     def init(self):
         """Initialize wrapper"""
         if self.switch is not None:
+            self.init_timestamp = time.time()
             self.switch.select_channel(val=SFP_CAMERA_line)
             try:
                 self.sfp_0 = Sfp()
                 self.data["sfp_0"]["module_info"] = self.sfp_0.get_module_info()
                 log.info("Initialized sfp 0")
             except Exception as e:
+                self.data["sfp_0"]["module_info"] = {}
                 log.error(f"Error when initializing sfp 0: {e}")
 
             self.switch.select_channel(val=SFP_OUT_line)
@@ -62,6 +68,7 @@ class SfpMonitor():
                 self.data["sfp_1"]["module_info"] = self.sfp_1.get_module_info()
                 log.info("Initialized sfp 1")
             except Exception as e:
+                self.data["sfp_1"]["module_info"] = {}
                 log.error(f"Error when initializing sfp 1: {e}")
 
             print(self.data)
@@ -74,14 +81,41 @@ class SfpMonitor():
                 try:
                     self.data["sfp_0"]["diagnostics"] = self.sfp_0.get_diagnostics()
                 except Exception as e:
-                    log.error(f"Error when getting sfp 0 diagnostics: {e}")
+                    self.data["sfp_0"]["diagnostics"] = {}
+                    log.debug(f"Error when getting sfp 0 diagnostics: {e}")
+                try:
+                    self.data["sfp_0"]["module_info"] = self.sfp_0.get_module_info()
+                except Exception as e:
+                    self.data["sfp_0"]["module_info"] = {}
+                    log.debug(f"Error when getting sfp 0 module info: {e}")
 
             if self.sfp_1:
                 self.switch.select_channel(val=SFP_OUT_line)
                 try:
                     self.data["sfp_1"]["diagnostics"] = self.sfp_1.get_diagnostics()
                 except Exception as e:
-                    log.error(f"Error when getting sfp 1 diagnostics: {e}")
+                    self.data["sfp_1"]["diagnostics"] = {}
+                    log.debug(f"Error when getting sfp 1 diagnostics: {e}")
+                try:
+                    self.data["sfp_1"]["module_info"] = self.sfp_1.get_module_info()
+                except Exception as e:
+                    self.data["sfp_1"]["module_info"] = {}
+                    log.debug(f"Error when getting sfp 1 module info: {e}")
+            
+            if time.time() - self.init_timestamp > RE_INIT_INTERVAL:
+                self.init_timestamp = time.time()
+                if not self.sfp_0:
+                    self.switch.select_channel(val=SFP_CAMERA_line)
+                    try:
+                        self.sfp_0 = Sfp()
+                    except Exception as e:
+                        log.debug(f"Error when trying to re-initialize sfp 0: {e}")
+                if not self.sfp_1:
+                    self.switch.select_channel(val=SFP_OUT_line)
+                    try:
+                        self.sfp_1 = Sfp()
+                    except Exception as e:
+                        log.debug(f"Error when trying to re-initialize sfp 1: {e}")
 
     def get_module_info(self, module_select):
         """Return module info of selected module"""
