@@ -154,7 +154,9 @@ class MotorControl():
             return False
 
         log.info("Moving motors to")
-
+        x = self.limit_motor_movement(x)
+        y = self.limit_motor_movement(y)
+        z = self.limit_motor_movement(z)
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
         msg.add_tlv(tlv_command)
@@ -182,6 +184,10 @@ class MotorControl():
         x = self.position_x + x
         y = self.position_y + y
         z = self.position_z + z
+
+        x = self.limit_motor_movement(x)
+        y = self.limit_motor_movement(y)
+        z = self.limit_motor_movement(z)
 
         msg = Message()
         tlv_command = create_command_tlv(TlvCommand.COMMAND_MOVE_MOTOR)
@@ -223,3 +229,9 @@ class MotorControl():
     def get_motors_connected(self):
         """Return motor status"""
         return self.motors_connected
+
+    def limit_motor_movement(self, val):
+        if val > 15000:
+            return 15000
+        if val < -15000:
+            return -15000
