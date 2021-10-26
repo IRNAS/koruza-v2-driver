@@ -206,6 +206,8 @@ class Koruza():
             color = Color.VERY_GOOD_SIGNAL
         if rx_power >= -5:
             color = Color.EXCELLENT_SIGNAL
+        if rx_power >= -3:
+            color = Color.PERFECT_SIGNAL
         self.led_control.set_color(color)
 
     def disable_led(self):
