@@ -153,7 +153,6 @@ class MotorControl():
         if not self.motors_connected:
             return False
 
-        log.info("Moving motors to")
         x = self.limit_motor_movement(x)
         y = self.limit_motor_movement(y)
         z = self.limit_motor_movement(z)
@@ -235,3 +234,4 @@ class MotorControl():
             return 15000
         if val < -15000:
             return -15000
+        return val
