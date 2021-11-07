@@ -313,7 +313,6 @@ class Koruza():
             cam_config = get_camera_config()
         self.data_manager.update_camera_config({"X": cam_config["x"], "Y": cam_config["y"], "IMG_P": cam_config["img_p"]})
 
-
     def update_current_camera_calib(self):
         cam_config = get_camera_config()
         self.data_manager.update_current_camera_config({"X": cam_config["x"], "Y": cam_config["y"], "IMG_P": cam_config["img_p"]})
@@ -338,6 +337,44 @@ class Koruza():
         # restart video stream service
         subprocess.call("sudo /bin/systemctl restart video_stream.service".split(" "))
 
+        return marker_x, marker_y
+
+    def set_zoom_level(self, zoom_level):
+        calib = self.get_current_calibration()
+        print(f"Calib: {calib}")
+
+        cam_config = self.get_camera_config()
+
+        marker_x = calib["calibration"]["offset_x"]
+        marker_y = calib["calibration"]["offset_y"]
+        img_p =  math.sqrt(1.0 / zoom_level)
+
+        # covert to global coordinates
+        global_marker_x = marker_x * cam_config["IMG_P"] + cam_config["X"] * 720
+        global_marker_y = (1.0 - cam_config["Y"]) * 720.0 - (720 - marker_y) * cam_config["IMG_P"]
+
+        if img_p == 1.0:
+            pixels_x = list(range(round(global_marker_x), round(global_marker_x) + int(math.sqrt(zoom_level))))
+            marker_x = sum(pixels_x) / len(pixels_x)
+            pixels_y = list(range(round(global_marker_y), round(global_marker_y) + int(math.sqrt(zoom_level))))
+            marker_y = sum(pixels_y) / len(pixels_y)
+        else:
+            marker_x = round(global_marker_x)
+            marker_y = round(global_marker_y)
+
+        # get new position of top left zoom area based on calculation
+        x, y, clamped_x, clamped_y = calculate_zoom_area_position(marker_x, marker_y, img_p)
+        self.update_camera_config(None, clamped_x, clamped_y, img_p)
+        
+        if img_p != 1.0:
+            marker_x, marker_y = calculate_marker_pos(x, y, img_p)
+
+        curr_calib = {}
+        curr_calib["offset_x"] = marker_x
+        curr_calib["offset_y"] = marker_y
+        curr_calib["zoom_level"] = zoom_level
+        self.update_current_calibration(curr_calib)
+        self.update_current_camera_calib()
         return marker_x, marker_y
 
 def clamp(n, smallest, largest): 
