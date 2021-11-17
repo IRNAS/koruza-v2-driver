@@ -56,7 +56,7 @@ class MotorControl():
                     self.motors_connected = False
             else:
                 break
-            time.sleep(0.2)
+            time.sleep(0.1)
 
     # NOTE: this has to run periodically to get last motor position and move accordingly
     def get_motor_status(self):

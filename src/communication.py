@@ -260,7 +260,7 @@ def build_frame(bytes_msg):
         bytes_msg[ind:ind] = b'\xf3'
     return b'\xf1' + bytes(bytes_msg) + b'\xf2'
 
-def read_frame(ser, timeout=2):
+def read_frame(ser, timeout=0.1):
     """Read frame, starting with 0xf1 and ending with 0xf2"""
     frame = b''  # initialize empty byte
     start_frame_detected = False

@@ -164,7 +164,7 @@ class Koruza():
             self.set_led_color(rx_power_dBm)
             # except Exception as e:
             #     log.warning(f"An exception occured when updating sfp diagnostics: {e}")
-            time.sleep(0.2)  # update five times
+            time.sleep(0.05)  # update five times
 
     def issue_remote_command(self, command, params):
         """Issue RPC call to other unit with a RPC client instance"""
